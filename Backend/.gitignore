@@ -1,0 +1,56 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+logs/*.log
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage / testing
+coverage/
+.nyc_output/
+jest/
+.vscode-test/
+
+# Build outputs
+dist/
+build/
+out/
+tmp/
+temp/
+.cache/
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Prisma / Mongoose / Database
+prisma/dev.db
+prisma/dev.db-journal
+*.sqlite
+*.sqlite-journal
+*.db
+
+# Uploads / temp storage
+uploads/
+public/uploads/

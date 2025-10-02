@@ -171,21 +171,21 @@ const BlogPage = () => {
 
               {/* Action Buttons */}
               <div className="space-y-4">
-                <button
+                {HasAccount&&(<button
                   onClick={() => setOpenWrite(true)}
                   className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 rounded-2xl flex items-center justify-center gap-3 hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold"
                 >
                   <PenSquare size={20} /> Write a Blog
-                </button>
+                </button>)}
                 
                 <div className="grid grid-cols-2 gap-3">
-                  <button
+                  {HasAccount&&(<button
                     onClick={() => goToDashboard()}
                     className="bg-white text-purple-600 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-purple-50 transition-all duration-300 border border-purple-200 shadow-sm hover:shadow-md font-medium"
                   >
                     <User size={18} />Your Account
-                  </button>
-                  {HasAccount&&(
+                  </button>)}
+                  {!HasAccount&&(
 <button
                     onClick={() => setOpenAcc(true)}
                     className="bg-white text-purple-600 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-purple-50 transition-all duration-300 border border-purple-200 shadow-sm hover:shadow-md font-medium"

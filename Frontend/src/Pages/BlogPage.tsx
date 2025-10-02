@@ -48,7 +48,8 @@ const BlogPage = () => {
     try {
       setIsLoading(true);
       const user:any = await account.get()
-      const useraccount = await axios.post( `${import.meta.env.VITE_BACKEND_BASE_URL}/blogs/fetch`,{userId:user.$id})
+      const useraccount = await axios.post(`${import.meta.env.VITE_BACKEND_BASE_URL}/blogs/fetch`,{userId:user.$id})
+      console.log("Account fetched in BlogPage:", useraccount.data);
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_BASE_URL}/blogs/fetchBlog?page=${pageNum}&limit=6`
       );

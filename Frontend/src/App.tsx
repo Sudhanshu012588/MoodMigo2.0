@@ -11,6 +11,8 @@ import Signup from "./Pages/Signup"
 import Dashboard from './Pages/Dashboard';
 import MoodMigoQuestionnaire from  './Pages/Questionare';
 import Login  from './Pages/Login';
+import BlogPage from "./Pages/BlogPage";
+import AccountPage from "./Pages/AccountPage"
 function App() {
   
   // const isLoggedIn = useUserState((state) => state.isLoggedIn);
@@ -48,7 +50,9 @@ function App() {
           <Route path='/dashboard' element={<Dashboard/>}/>
           <Route path='/login' element={<Login/>}/>
           <Route path='/questionnaire' element={<MoodMigoQuestionnaire/>}/>
+          <Route path='/blog' element={<BlogPage/>}/>
           <Route path="*" element={<NotFound />} />
+          <Route path='/account/:id' element={<AccountPage/>}/>
         </Routes>
       </BrowserRouter>
     </>

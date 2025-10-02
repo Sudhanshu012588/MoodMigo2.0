@@ -8,7 +8,8 @@ import { useUserState } from "../Store/Userstore";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../Components/Navbar";
 import MoodMigoLoading from "./LoadingPage";
-
+import Chart from "../Components/Chart";
+import axios from "axios";
 const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -18,11 +19,9 @@ const Dashboard: React.FC = () => {
   const setUsername = useUserState((state) => state.setUsername);
   const setEmail = useUserState((state) => state.setEmail);
   const setId = useUserState((state) => state.setId);
-
+  const [Score,setScore]=useState<number[]>([])
   // Dummy Data
   const numberOfBlogs = 3;
-  const score = 80;
-  const updateDate = "2025-09-29";
   const professionals = [
     {
       $id: "1",
@@ -40,6 +39,22 @@ const Dashboard: React.FC = () => {
       $createdAt: new Date().toISOString(),
     },
   ];
+const getAssessment=async(id:string)=>{
+  console.log(id)
+  try {
+    const response = await axios.post(`${import.meta.env.VITE_BACKEND_BASE_URL}/questionare/getassessment`,{
+      id:id
+    })
+    if(response.data.status==="success"){
+      setScore(response.data.TotalScore)
+    }else{
+      throw new Error("Failed to fetch assessment data");
+    }
+  } catch (error) {
+    // toast.error("Error fetching assessment data");
+    console.error("Error fetching assessment data:", error);
+  }
+}
 
   // Fetch User Data
   useEffect(() => {
@@ -47,9 +62,11 @@ const Dashboard: React.FC = () => {
       try {
         await account.getSession({ sessionId: "current" });
         const userData = await account.get();
+
         setUsername(userData.name);
         setEmail(userData.email);
         setId(userData.$id);
+        getAssessment(userData.$id);
         setLoading(false);
         setIsLoggedIn(true);
       } catch (error: any) {
@@ -159,20 +176,20 @@ const Dashboard: React.FC = () => {
         {/* Progress, Sessions, Journals */}
         <div className="max-w-6xl mx-auto mt-16 grid grid-cols-1 lg:grid-cols-4 gap-8 px-6">
           {/* Progress */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="bg-gradient-to-tr from-purple-100 to-indigo-100 rounded-3xl p-6 flex flex-col items-center shadow-xl hover:shadow-2xl transition-shadow"
-          >
-            <span className="text-sm font-medium px-4 py-1 rounded-full bg-gradient-to-r from-purple-300 to-indigo-300 text-gray-900">
-              Your Progress
-            </span>
-            <p className="mt-6 text-4xl font-bold text-gray-900">{score}%</p>
-            <span className="mt-4 text-sm text-gray-700 bg-gradient-to-r from-purple-200 to-indigo-200 px-3 py-1 rounded-full">
-              Last Updated: {updateDate}
-            </span>
-          </motion.div>
+          <div className="p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="bg-gradient-to-tr  from-purple-100 to-indigo-100 rounded-3xl p-2 flex flex-col justify-center items-center  shadow-xl hover:shadow-2xl transition-shadow"
+      >
+        <span className="text-sm font-medium px-4 py-1 rounded-full bg-gradient-to-r from-purple-300 to-indigo-300 text-gray-900">
+          Your Progress
+        </span>
+          <Chart  numbers={Score}/>
+      </motion.div>
+    </div>
+
 
           {/* Sessions */}
           <motion.div

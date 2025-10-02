@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import router from "./Routes/Questionare.js";
+import Blogrouter from "./Routes/Blog.js";
 import connectDB from "./DB/DBconfig.js"
 dotenv.config();
 
@@ -26,7 +27,7 @@ app.get("/", (req, res) => {
 
 // Questionare routes
 app.use("/questionare", router);
-
+app.use("/blogs",Blogrouter)
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

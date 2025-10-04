@@ -112,6 +112,28 @@ const Like = async (blogId: string) => {
         return blog;
       })
     );
+    setFilteredBlogs(
+      (prevBlogs: any[]) =>
+      prevBlogs.map(blog => {
+        if (blog._id === blogId) {
+          const isCurrentlyLiked = blog.likes.includes(userId);
+          if (isCurrentlyLiked) {
+            // Unlike: remove user from likes
+            return {
+              ...blog,
+              likes: blog.likes.filter((id: string) => id !== userId)
+            };
+          } else {
+            // Like: add user to likes
+            return {
+              ...blog,
+              likes: [...blog.likes, userId]
+            };
+          }
+        }
+        return blog;
+      })
+    )
 
     // Also update selected blog if it's open
     if (selectedBlog && selectedBlog._id === blogId) {
@@ -172,6 +194,29 @@ const Hearted = async (blogId: string) => {
         return blog;
       })
     );
+
+    setFilteredBlogs(
+      (prevBlogs: any[]) =>
+      prevBlogs.map((blog) => {
+        if (blog._id === blogId) {
+          const isCurrentlyHearted = blog.heart.includes(userId);
+          if (isCurrentlyHearted) {
+            // Unheart: remove user from heart array
+            return {
+              ...blog,
+              heart: blog.heart.filter((id: string) => id !== userId),
+            };
+          } else {
+            // Heart: add user to heart array
+            return {
+              ...blog,
+              heart: [...blog.heart, userId],
+            };
+          }
+        }
+        return blog;
+      })
+    )
 
     // ✅ Update selected blog if opened
     if (selectedBlog && selectedBlog._id === blogId) {

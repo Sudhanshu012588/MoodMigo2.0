@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 import React, { useState } from "react";
-import { FileText, Image as ImageIcon } from "lucide-react";
+import { FileText, Image as ImageIcon, ChevronDown, X } from "lucide-react";
 import axios from "axios";
 import { account } from "../Appwrite/config";
-import {toast} from "react-toastify"
+import { toast } from "react-toastify";
+
 interface Props {
   onClose?: () => void; // optional, if used as modal
 }
@@ -13,8 +14,19 @@ function WriteBlog({ onClose }: Props) {
   const [content, setContent] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
   const [image, setImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  const predefinedTags = [
+    "Mindfulness",
+    "Stress",
+    "Wellness",
+    "Productivity",
+    "Motivation",
+    "Mental Health",
+    "Focus",
+  ];
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -48,21 +60,32 @@ function WriteBlog({ onClose }: Props) {
       setTags([...tags, newTag.trim()]);
       setNewTag("");
     }
+    setShowDropdown(false);
   };
 
-  const handleSubmit = async(e: React.FormEvent) => {
+  const handleDropdownTag = (tag: string) => {
+    if (!tags.includes(tag)) {
+      setTags([...tags, tag]);
+    }
+    setShowDropdown(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const user = await account.get();
     const creatorId = user.$id;
-    const response = await axios.post(`${import.meta.env.VITE_BACKEND_BASE_URL}/blogs/createblog`, {
-      creatorId,
-      tittle:title,
-      content,
-      tags,
-      Featured_Image:image,
-    });
-    if(response.data.status=="success"){
-      toast.success("Blog created successfully")
+    const response = await axios.post(
+      `${import.meta.env.VITE_BACKEND_BASE_URL}/blogs/createblog`,
+      {
+        creatorId,
+        tittle: title,
+        content,
+        tags,
+        Featured_Image: image,
+      }
+    );
+    if (response.data.status == "success") {
+      toast.success("Blog created successfully");
     }
     if (onClose) onClose(); // close modal if used as modal
   };
@@ -133,26 +156,55 @@ function WriteBlog({ onClose }: Props) {
                     onClick={() => setTags(tags.filter((t) => t !== tag))}
                     className="text-gray-500 hover:text-gray-700"
                   >
-                    ✕
+                    <X size={14} />
                   </button>
                 </span>
               ))}
             </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Add a tag (e.g. Anxiety, Wellness)"
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                className="flex-1 border rounded-lg px-3 py-2 outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleAddTag}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
-              >
-                Add
-              </button>
+
+            <div className="relative">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add a tag (e.g. Anxiety, Wellness)"
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  className="flex-1 border rounded-lg px-3 py-2 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTag}
+                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="border rounded-lg px-3 py-2 text-gray-600 hover:bg-purple-50 transition"
+                >
+                  <ChevronDown size={18} />
+                </button>
+              </div>
+
+              {showDropdown && (
+                <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-xl mt-2 shadow-lg max-h-48 overflow-y-auto">
+                  {predefinedTags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleDropdownTag(tag)}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-purple-50 ${
+                        tags.includes(tag)
+                          ? "text-purple-600 font-semibold"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -188,7 +240,7 @@ function WriteBlog({ onClose }: Props) {
             className="w-full bg-purple-600 text-white py-2 rounded-xl shadow-md hover:bg-purple-700 transition"
             disabled={uploading}
           >
-            {uploading?"Uploading...":"Submit Blog"}
+            {uploading ? "Uploading..." : "Submit Blog"}
           </button>
         </form>
       </motion.div>

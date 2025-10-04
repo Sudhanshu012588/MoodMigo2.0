@@ -20,12 +20,10 @@ const BlogSchema = new mongoose.Schema({
         type:String
     },
     likes:{
-        type:Number,
-        default:0
+        type:[String]
     },
     heart:{
-        type:Number,
-        default:0
+        type:[String]
     }
 },{
     timestamps:true,

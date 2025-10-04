@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Search,
+  
   ThumbsUp,
   Heart,
   PenSquare,
@@ -17,7 +17,6 @@ import { useNavigate } from "react-router-dom";
 import WriteBlog from "../Components/WriteBlog";
 import { account } from "../Appwrite/config";
 import axios from "axios";
-
 const categories = [
   "All",
   "Mindfulness",
@@ -33,51 +32,202 @@ const BlogPage = () => {
   const [OpenAcc, setOpenAcc] = useState(false);
   const [OpenWrite, setOpenWrite] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState<any | null>(null);
-
+  const [userId,setUserId] = useState<string | null>(null);
   const [blogs, setBlogs] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [HasAccount, setHasAccount] = useState(false);
+  const [filteredBlogs, setFilteredBlogs] = useState<any[]>([]);
+  const [topContributors, setTopContributors] = useState<any[]>([]);
   const navigate = useNavigate();
+  // const [tempLiked, //setTempLiked] = useState<{ [key: string]: boolean }>({});
+  // const [tempHearted, //setTempHearted] = useState<{ [key: string]: boolean }>({});
+  
 
-  useEffect(() => {
-    fetchBlogs(page);
-  }, [page]);
+  
 
   const fetchBlogs = async (pageNum: number) => {
-    try {
-      setIsLoading(true);
-      const user:any = await account.get()
-      const useraccount = await axios.post(`${import.meta.env.VITE_BACKEND_BASE_URL}/blogs/fetch`,{userId:user.$id})
-      console.log("Account fetched in BlogPage:", useraccount.data);
-      const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_BASE_URL}/blogs/fetchBlog?page=${pageNum}&limit=6`
-      );
-      if(useraccount.data.status=="Success"){
-        setHasAccount(true);
-      }
-      setBlogs(res.data.blogs);
-      setTotalPages(res.data.totalPages);
-    } catch (err) {
-      console.error("Error fetching blogs:", err);
-    } finally {
-      setIsLoading(false);
+  try {
+    setIsLoading(true);
+    const user: any = await account.get();
+    setUserId(user.$id);
+
+    // this route probably checks if the user has a Blog Account
+    const useraccount = await axios.post(`${import.meta.env.VITE_BACKEND_BASE_URL}/blogs/fetch`, { userId: user.$id });
+
+    // this route actually fetches blogs + topContributors
+    const res = await axios.get(
+      `${import.meta.env.VITE_BACKEND_BASE_URL}/blogs/fetchBlog?page=${pageNum}&limit=6`
+    );
+
+    if (useraccount.data.status === "Success") {
+      setHasAccount(true);
     }
-  };
+
+    console.log("Response:", res.data);
+
+    setBlogs(res.data.blogs);
+    setFilteredBlogs(res.data.blogs);
+
+    // ✅ Use topContributors from the correct response
+    setTopContributors(res.data.topContributors);
+
+    setTotalPages(res.data.totalPages);
+  } catch (err) {
+    console.error("Error fetching blogs:", err);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
+  useEffect(()=>{console.log("List",topContributors)},[topContributors,setTopContributors])
+useEffect(() => {
+    fetchBlogs(page);
+  }, [page]);
+const Like = async (blogId: string) => {
+  try {
+    // const user = await account.get();
+    // const userId = user.$id;
+
+    // Optimistically update the UI first
+    setBlogs((prevBlogs: any[]) =>
+      prevBlogs.map(blog => {
+        if (blog._id === blogId) {
+          const isCurrentlyLiked = blog.likes.includes(userId);
+          if (isCurrentlyLiked) {
+            // Unlike: remove user from likes
+            return {
+              ...blog,
+              likes: blog.likes.filter((id: string) => id !== userId)
+            };
+          } else {
+            // Like: add user to likes
+            return {
+              ...blog,
+              likes: [...blog.likes, userId]
+            };
+          }
+        }
+        return blog;
+      })
+    );
+
+    // Also update selected blog if it's open
+    if (selectedBlog && selectedBlog._id === blogId) {
+      setSelectedBlog((prev: any) => {
+        const isCurrentlyLiked = prev.likes.includes(userId);
+        return {
+          ...prev,
+          likes: isCurrentlyLiked 
+            ? prev.likes.filter((id: string) => id !== userId)
+            : [...prev.likes, userId],
+          Liked: !isCurrentlyLiked,
+        };
+      });
+    }
+
+    // Then make the API call
+    const LikeResponse = await axios.get(
+      `${import.meta.env.VITE_BACKEND_BASE_URL}/blogs/like?BlogId=${blogId}&userId=${userId}`
+    );
+    //setTempLiked(prev => ({ ...prev, [blogId]: !prev[blogId] }));
+    //console.log("Like API response:", LikeResponse.data);
+    // If API fails, revert the optimistic update
+    if (LikeResponse.data.status !== "Success") {
+      throw new Error("API call failed");
+    }
+    
+
+  } catch (error) {
+    //console.log(error)
+  }
+};
+
+
+const Hearted = async (blogId: string) => {
+  try {
+    const user = await account.get();
+    const userId = user.$id;
+
+    // ✅ Optimistically update UI
+    setBlogs((prevBlogs: any[]) =>
+      prevBlogs.map((blog) => {
+        if (blog._id === blogId) {
+          const isCurrentlyHearted = blog.heart.includes(userId);
+          if (isCurrentlyHearted) {
+            // Unheart: remove user from heart array
+            return {
+              ...blog,
+              heart: blog.heart.filter((id: string) => id !== userId),
+            };
+          } else {
+            // Heart: add user to heart array
+            return {
+              ...blog,
+              heart: [...blog.heart, userId],
+            };
+          }
+        }
+        return blog;
+      })
+    );
+
+    // ✅ Update selected blog if opened
+    if (selectedBlog && selectedBlog._id === blogId) {
+      setSelectedBlog((prev: any) => {
+        const isCurrentlyHearted = prev.heart.includes(userId);
+        return {
+          ...prev,
+          heart: isCurrentlyHearted
+            ? prev.heart.filter((id: string) => id !== userId)
+            : [...prev.heart, userId],
+          Hearted: !isCurrentlyHearted,
+        };
+      });
+    }
+
+    // ✅ API call
+    
+    // ✅ Store temporary state for animation / icon toggling
+    //setTempHearted((prev) => ({ ...prev, [blogId]: !prev[blogId] }));
+    const HeartResponse = await axios.get(
+      `${import.meta.env.VITE_BACKEND_BASE_URL}/blogs/heart?BlogId=${blogId}&userId=${userId}`
+    );
+
+    //console.log("Heart API response:", HeartResponse.data);
+
+    // ✅ If backend fails, revert the change
+    if (HeartResponse.data.status !== "Success") {
+      throw new Error("API call failed");
+    }
+  } catch (error) {
+    console.error("Error updating heart:", error);
+  }
+};
+
 
   const goToDashboard = async () => {
     const user = await account.get();
     navigate(`/account/${user.$id}`);
   };
 
+  useEffect(() => {
+    console.log("Selected Category:", selectedCategory);
+    setFilteredBlogs(blogs.filter(blog =>{
+      if(selectedCategory==="All") return true;
+      return blog.tags.includes(selectedCategory);
+    }));
+  },[selectedCategory,setSelectedCategory]);
+
   if (isLoading) return <MoodMigoLoading />;
 
   // Separate featured blog (most liked)
   const featuredBlog =
     blogs.length > 0
-      ? blogs.reduce((max, blog) => (blog.likes > max.likes ? blog : max), blogs[0])
+      ? blogs.reduce((max, blog) => (blog.likes.length > max.likes ? blog : max), blogs[0])
       : null;
-  const otherBlogs = blogs.filter((b) => b._id !== featuredBlog?._id);
+  // const otherBlogs = blogs.filter((b) => b._id !== featuredBlog?._id);
 
   return (
     <>
@@ -103,7 +253,7 @@ const BlogPage = () => {
               </div>
 
               {/* Search */}
-              <div className="bg-white rounded-2xl shadow-lg p-4">
+              {/* <div className="bg-white rounded-2xl shadow-lg p-4">
                 <div className="flex items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
                   <Search className="text-gray-400" size={20} />
                   <input
@@ -112,7 +262,7 @@ const BlogPage = () => {
                     className="ml-3 w-full bg-transparent outline-none placeholder-gray-400"
                   />
                 </div>
-              </div>
+              </div> */}
 
               {/* Categories */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
@@ -133,41 +283,38 @@ const BlogPage = () => {
                   ))}
                 </div>
               </div>
+                    <p className="text-sm font-bold text-gray-600">Our Top Contributors</p>
+              {Array.isArray(topContributors) && topContributors.length > 0 ? (
+  topContributors.map((contributor, index) => (
+    <div
+      key={contributor.account?._id || index}
+      className={`flex items-center gap-4 p-3 bg-gradient-to-r rounded-xl border`}
+    >
+      <div className="relative">
+        <img
+          src={
+            contributor.account?.ProfilePicture ||
+            `https://i.pravatar.cc/40?img=${index + 5}`
+          }
+          alt={contributor.account?.username || "User"}
+          className={`w-12 h-12 rounded-full border-2 `}
+        />
+        <Award className={`absolute -top-1 -right-1 text-yellow-500 fill-current`} size={16} />
+      </div>
+      <div className="flex-1">
+        <p className="font-semibold text-gray-800">
+          {contributor.account?.username || "Anonymous"}
+        </p>
+        {/* <p className="text-sm text-gray-600">
+          {contributor.userStats?.BlogContributions || 0} articles
+        </p> */}
+      </div>
+    </div>
+  ))
+) : (
+  <p className="text-gray-500 text-sm">No top contributors yet.</p>
+)}
 
-              {/* Top Contributors */}
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="font-bold text-gray-800 mb-4 text-lg">Top Contributors</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-3 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-200">
-                    <div className="relative">
-                      <img
-                        src="https://i.pravatar.cc/40?img=5"
-                        alt="Anna"
-                        className="w-12 h-12 rounded-full border-2 border-yellow-400"
-                      />
-                      <Award className="absolute -top-1 -right-1 text-yellow-500" size={16} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-800">Anna</p>
-                      <p className="text-sm text-gray-600">24 articles</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 p-3 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-blue-200">
-                    <div className="relative">
-                      <img
-                        src="https://i.pravatar.cc/40?img=12"
-                        alt="John"
-                        className="w-12 h-12 rounded-full border-2 border-blue-400"
-                      />
-                      <Award className="absolute -top-1 -right-1 text-blue-500" size={16} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-800">John</p>
-                      <p className="text-sm text-gray-600">18 articles</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               {/* Action Buttons */}
               <div className="space-y-4">
@@ -253,10 +400,15 @@ const BlogPage = () => {
                       </div>
                       <div className="flex gap-6 text-white/80">
                         <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
-                          <ThumbsUp size={18} /> {featuredBlog.likes || 0}
+                          <button onClick={()=>{Like(featuredBlog._id) }}>
+                            {!featuredBlog.likes.includes(userId) ?(<ThumbsUp size={18} />):(<ThumbsUp size={18} className="text-purple-300 fill-current" />)}
+                            {featuredBlog.likes.length || 0}
+                          </button>
                         </div>
                         <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
-                          <Heart size={18} /> {featuredBlog.heart || 0}
+                          <button onClick={()=>{Hearted(featuredBlog._id)}}>
+                          {featuredBlog.heart.includes(userId)?(<Heart size={18} className="text-red-500 fill-current" />)  :(<Heart size={18}  />)}{featuredBlog.heart.length || 0}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -268,7 +420,7 @@ const BlogPage = () => {
               <div className="mb-8">
                 <h3 className="text-2xl font-bold text-gray-800 mb-6">Latest Articles</h3>
                 <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {otherBlogs.map((blog, idx) => (
+                  {filteredBlogs.map((blog, idx) => (
                     <motion.div
                       key={blog._id || idx}
                       className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group overflow-hidden border border-gray-100"
@@ -315,14 +467,22 @@ const BlogPage = () => {
                           )}
                         </div>
                         <div className="flex gap-4 text-gray-500 border-t border-gray-100 pt-4">
+                            <button onClick={()=>{Like(blog._id)}}>
                           <div className="flex items-center gap-2">
-                            <ThumbsUp size={16} className="text-purple-500" />
-                            <span className="text-sm font-medium">{blog.likes || 0}</span>
+                            {
+!blog.likes.includes(userId)?(<ThumbsUp size={16}/>):(<ThumbsUp size={18} className="text-purple-300 fill-current" />)
+                            }
+                            <span className="text-sm font-medium">{blog.likes.length || 0}</span>
                           </div>
+                            </button>
+
+                            <button onClick={()=>{Hearted(blog._id)}}>
+
                           <div className="flex items-center gap-2">
-                            <Heart size={16} className="text-red-400" />
-                            <span className="text-sm font-medium">{blog.heart || 0}</span>
+                            {blog.heart.includes(userId)?(<Heart size={16} className="text-red-500 fill-current" />  ): (<Heart size={16}  />)}
+                            <span className="text-sm font-medium">{blog.heart.length || 0}</span>
                           </div>
+                            </button>
                         </div>
                       </div>
                     </motion.div>
@@ -423,14 +583,21 @@ const BlogPage = () => {
                     <p className="text-sm text-gray-600">Community Writer</p>
                   </div>
                   <div className="ml-auto flex gap-4">
+                    <button onClick={()=>{Like(selectedBlog._id)}}>
+
                     <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm">
-                      <ThumbsUp size={18} className="text-purple-500" />
-                      <span className="font-semibold">{selectedBlog.likes || 0}</span>
+                      {!selectedBlog.likes.includes(userId)?(<ThumbsUp size={18}/>):(<ThumbsUp size={18} className="text-purple-300 fill-current" />)}
+                      <span className="font-semibold">{selectedBlog.likes.length || 0}</span>
                     </div>
+                    </button>
+
+                    <button onClick={()=>{Hearted(selectedBlog._id)}}>
+
                     <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm">
-                      <Heart size={18} className="text-red-400" />
-                      <span className="font-semibold">{selectedBlog.heart || 0}</span>
+                      {selectedBlog.heart.includes(userId)?(<Heart size={18} className="text-red-500 fill-current" />)  : (<Heart size={18}  />)}
+                      <span className="font-semibold">{selectedBlog.heart.length || 0}</span>
                     </div>
+                    </button>
                   </div>
                 </div>
 

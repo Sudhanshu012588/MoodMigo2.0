@@ -45,12 +45,12 @@ export const submit = async (req, res) => {
         updatedAssessment.Report_Details = scoreResponse.reportDetails || scoreResponse.Report_Details;
         await updatedAssessment.save();
 
-        console.log("scoreResponse.Report_Details,",scoreResponse)
+        // console.log("scoreResponse.Report_Details,",scoreResponse)
         // Update or create UserPersona
         await UserPersona.findOneAndUpdate(
   { userId: id },
   {
-    $push: { Total_Score: scoreResponse.Total_Score }, // append new score
+    $push: { Total_Score: 50-scoreResponse.Total_Score }, // append new score
     $set: {
       Severity_Level: determineSeverity(scoreResponse.Total_Score),
       Report_Details: scoreResponse.Report_Details,

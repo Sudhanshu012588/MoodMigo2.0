@@ -92,7 +92,7 @@ export const fetchBlog = async (req, res) => {
         .find()
         .sort({ BlogContributions: -1 })
         .limit(3);
-      console.log("top",topContributors)
+      //console.log("top",topContributors)
       // ✅ Fetch associated user accounts
       const Topaccounts = await Promise.all(
         topContributors.map(async (contributor) => {
@@ -101,7 +101,7 @@ export const fetchBlog = async (req, res) => {
             account}
         })
       );
-      console.log("Topcontri",Topaccounts)
+      //console.log("Topcontri",Topaccounts)
 
       return res.status(200).json({
         status: "success",
@@ -128,14 +128,14 @@ export const Like = async(req,res)=>{
   try{
     const {userId,BlogId} = req.query;
     if(!userId){
-      //console.log("user id",userId)
+      ////console.log("user id",userId)
       return res.status(400).json({
         status:"failed",
         message:"Please provide a valid user id"
       }) 
     }
     else if(!BlogId){
-      //console.log("BlogId",BlogId)
+      ////console.log("BlogId",BlogId)
       return res.status(400).json({
         status:"failed",
         message:"Please provide a valid Blog id"
@@ -143,12 +143,12 @@ export const Like = async(req,res)=>{
     }
     else{
         const TargetBlog = await Blogs.findById(BlogId);
-        //console.log("Found Non Liked",TargetBlog);
+        ////console.log("Found Non Liked",TargetBlog);
         const hasLiked =  TargetBlog.likes.includes(userId);
         if(hasLiked){
           TargetBlog.likes = TargetBlog.likes.filter(creatorId=> creatorId.toString() !==userId);
           await TargetBlog.save();
-          //console.log("Found Liked",TargetBlog)
+          ////console.log("Found Liked",TargetBlog)
           return res.status(200).json({
             status:"Success",
             operation:"unliked",
@@ -158,7 +158,7 @@ export const Like = async(req,res)=>{
         else{
           TargetBlog.likes.push(userId);
           await TargetBlog.save();
-          //console.log("Updated Non Liked",TargetBlog)
+          ////console.log("Updated Non Liked",TargetBlog)
           return res.status(200).json({
             message:"success",
             operation:"Liked",
@@ -168,7 +168,7 @@ export const Like = async(req,res)=>{
         }
     }
   }catch(e){
-    //console.log(e)
+    ////console.log(e)
     return res.status(500).json({
       status:"failed",
       message:e

@@ -13,6 +13,7 @@ import MoodMigoQuestionnaire from  './Pages/Questionare';
 import Login  from './Pages/Login';
 import BlogPage from "./Pages/BlogPage";
 import AccountPage from "./Pages/AccountPage"
+import Manarah from "./Pages/Manarah"
 function App() {
   
   // const isLoggedIn = useUserState((state) => state.isLoggedIn);
@@ -53,6 +54,7 @@ function App() {
           <Route path='/blog' element={<BlogPage/>}/>
           <Route path="*" element={<NotFound />} />
           <Route path='/account/:id' element={<AccountPage/>}/>
+          <Route path='/manarah' element={<Manarah/>}/>
         </Routes>
       </BrowserRouter>
     </>

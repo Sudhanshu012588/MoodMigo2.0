@@ -127,7 +127,7 @@ const getAssessment=async(id:string)=>{
               label: "MANARAH",
               description: "Your AI mental health companion.",
               icon: <Users className="w-10 h-10 text-purple-600" />,
-              onClick: () => navigate("/chat"),
+              onClick: () => navigate("/manarah"),
             },
             {
               label: "Questionnaire",

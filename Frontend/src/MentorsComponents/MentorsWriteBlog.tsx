@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import React, { useState } from "react";
 import { FileText, Image as ImageIcon, ChevronDown, X } from "lucide-react";
 import axios from "axios";
-import { account } from "../Appwrite/config";
+import { account } from "../Appwrite/MentorsConfig";
 import { toast } from "react-toastify";
 
 interface Props {
@@ -10,10 +10,10 @@ interface Props {
   byMentors?: boolean; // to differentiate between user and mentor blogs
 }
 
-function WriteBlog({ onClose }: Props) {
+function WriteBlog({ onClose,byMentors }: Props) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>(['byMentors']);
   const [newTag, setNewTag] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [image, setImage] = useState<string | null>(null);
@@ -76,6 +76,7 @@ function WriteBlog({ onClose }: Props) {
     e.preventDefault();
     const user = await account.get();
     const creatorId = user.$id;
+    console.log("byMentors:", byMentors);
     const response = await axios.post(
       `${import.meta.env.VITE_BACKEND_BASE_URL}/blogs/createblog`,
       {
@@ -83,7 +84,8 @@ function WriteBlog({ onClose }: Props) {
         tittle: title,
         content,
         tags,
-        Featured_Image: image
+        Featured_Image: image,
+        byMentors: byMentors?byMentors:false
       }
     );
     if (response.data.status == "success") {

@@ -24,6 +24,10 @@ const BlogSchema = new mongoose.Schema({
     },
     heart:{
         type:[String]
+    },
+    byMentors:{
+        type:Boolean,
+        default:false
     }
 },{
     timestamps:true,

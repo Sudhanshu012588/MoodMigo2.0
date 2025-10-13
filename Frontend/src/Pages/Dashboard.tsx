@@ -1,7 +1,7 @@
 // DashboardRedesignV2.tsx
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users, Calendar, MessageCircle } from "lucide-react";
+import { Users, Calendar, MessageCircle, BookOpen } from "lucide-react";
 import { account } from "../Appwrite/config";
 import { toast } from "react-toastify";
 import { useUserState } from "../Store/Userstore";
@@ -10,6 +10,8 @@ import Navbar from "../Components/Navbar";
 import MoodMigoLoading from "./LoadingPage";
 import Chart from "../Components/Chart";
 import axios from "axios";
+import DiaryJournal from "../Components/DailyJournal"
+
 const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -19,7 +21,9 @@ const Dashboard: React.FC = () => {
   const setUsername = useUserState((state) => state.setUsername);
   const setEmail = useUserState((state) => state.setEmail);
   const setId = useUserState((state) => state.setId);
-  const [Score,setScore]=useState<number[]>([])
+  const [OpenJournal, setOpenJournal] = useState<Boolean>(false)
+  const [Score, setScore] = useState<number[]>([])
+  
   // Dummy Data
   const numberOfBlogs = 3;
   const professionals = [
@@ -31,30 +35,22 @@ const Dashboard: React.FC = () => {
       meetingurl: "https://example.com/meet",
     },
   ];
-  const journalEntries = [
-    {
-      $id: "j1",
-      Mood: "Happy",
-      Body: "Feeling great today!",
-      $createdAt: new Date().toISOString(),
-    },
-  ];
-const getAssessment=async(id:string)=>{
-  console.log(id)
-  try {
-    const response = await axios.post(`${import.meta.env.VITE_BACKEND_BASE_URL}/questionare/getassessment`,{
-      id:id
-    })
-    if(response.data.status==="success"){
-      setScore(response.data.TotalScore)
-    }else{
-      throw new Error("Failed to fetch assessment data");
+
+  const getAssessment = async (id: string) => {
+    console.log(id)
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_BASE_URL}/questionare/getassessment`, {
+        id: id
+      })
+      if (response.data.status === "success") {
+        setScore(response.data.TotalScore)
+      } else {
+        throw new Error("Failed to fetch assessment data");
+      }
+    } catch (error) {
+      console.error("Error fetching assessment data:", error);
     }
-  } catch (error) {
-    // toast.error("Error fetching assessment data");
-    console.error("Error fetching assessment data:", error);
   }
-}
 
   // Fetch User Data
   useEffect(() => {
@@ -105,9 +101,10 @@ const getAssessment=async(id:string)=>{
             className="h-56 w-56 md:h-64 md:w-64 drop-shadow-2xl"
           />
           <div className="text-center md:text-left">
-            <h1 className="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-700 to-indigo-600">
+            <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-purple-700 to-indigo-600 bg-clip-text text-transparent">
               Hello, {username}!
             </h1>
+
             <p className="mt-4 text-gray-700 text-lg md:text-xl max-w-lg">
               Welcome back to your mental wellness dashboard. Explore your
               progress, sessions, and journal entries all in one place.
@@ -148,7 +145,7 @@ const getAssessment=async(id:string)=>{
                 key={label}
                 onClick={onClick}
                 whileHover={isQuestionnaire ? "hover" : {}}
-                className="relative backdrop-blur-md   border border-gray-200 shadow-lg rounded-2xl p-6 flex flex-col gap-4 overflow-hidden hover:shadow-2xl transition-all "
+                className="relative backdrop-blur-md border border-gray-200 shadow-lg rounded-2xl p-6 flex flex-col gap-4 overflow-hidden hover:shadow-2xl transition-all"
               >
                 {isQuestionnaire && (
                   <motion.img
@@ -175,23 +172,48 @@ const getAssessment=async(id:string)=>{
 
         {/* Progress, Sessions, Journals */}
         <div className="max-w-6xl mx-auto mt-16 grid grid-cols-1 lg:grid-cols-4 gap-8 px-6">
-          {/* Progress */}
-          <div className="p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="bg-gradient-to-tr  from-purple-100 to-indigo-100 rounded-3xl p-2 flex flex-col justify-center items-center  shadow-xl hover:shadow-2xl transition-shadow"
-      >
-        <span className="text-sm font-medium px-4 py-1 rounded-full bg-gradient-to-r from-purple-300 to-indigo-300 text-gray-900">
-          Your Progress
-        </span>
-          <Chart  numbers={Score}/>
-      </motion.div>
-    </div>
+          {/* Left Column - Progress & Journal */}
+          <div className="space-y-8">
+            {/* Progress Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="bg-gradient-to-tr from-purple-100 to-indigo-100 rounded-3xl p-6 flex flex-col justify-center items-center shadow-xl hover:shadow-2xl transition-shadow"
+            >
+              <span className="text-sm font-medium px-4 py-1 rounded-full bg-gradient-to-r from-purple-300 to-indigo-300 text-gray-900 mb-4">
+                Your Progress
+              </span>
+              <Chart numbers={Score} />
+            </motion.div>
 
+            {/* Journal Entry Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="backdrop-blur-md rounded-3xl shadow-xl p-6 border border-gray-100 flex flex-col items-center justify-center text-center"
+            >
+              <div className="p-3 bg-gradient-to-r from-purple-500 to-blue-600 rounded-2xl shadow-lg mb-4">
+                <BookOpen className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
+                Daily Journal
+              </h3>
+              <p className="text-gray-600 text-sm mb-6">
+                Reflect on your thoughts and track your mood
+              </p>
+              <button 
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 font-semibold flex items-center justify-center gap-2"
+                onClick={() => setOpenJournal(true)}
+              >
+                <BookOpen className="w-5 h-5" />
+                Write Journal Entry
+              </button>
+            </motion.div>
+          </div>
 
-          {/* Sessions */}
+          {/* Right Column - Sessions */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -202,7 +224,12 @@ const getAssessment=async(id:string)=>{
               Upcoming Sessions
             </h3>
             {professionals.length === 0 ? (
-              <p className="text-gray-500 text-center">No upcoming sessions.</p>
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">No upcoming sessions.</p>
+                <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-full flex items-center justify-center">
+                  <Calendar className="w-10 h-10 text-purple-600" />
+                </div>
+              </div>
             ) : (
               <div className="space-y-4">
                 {professionals.map((session) => (
@@ -247,47 +274,23 @@ const getAssessment=async(id:string)=>{
               </button>
             </div>
           </motion.div>
+        </div>
+      </div>
 
-          {/* Journal Entries */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="lg:col-span-2 backdrop-blur-md rounded-3xl shadow-xl p-6 border border-gray-100"
+      {/* Journal Modal */}
+      {OpenJournal && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[100]"
+          onClick={() => setOpenJournal(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden relative"
+            onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-2xl font-bold mb-6 text-center text-gray-800">
-              Recent Journal Entries
-            </h3>
-            {journalEntries.length === 0 ? (
-              <p className="text-gray-500 text-center">No entries yet.</p>
-            ) : (
-              journalEntries.map((entry) => (
-                <div
-                  key={entry.$id}
-                  className="bg-indigo-50 p-4 rounded-2xl mb-4 shadow hover:shadow-lg transition-shadow"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span>🙂</span>
-                    <h4 className="font-semibold">{entry.Mood}</h4>
-                    <span className="ml-auto text-xs italic text-gray-400">
-                      {new Date(entry.$createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <p className="text-gray-700 text-sm whitespace-pre-line">{entry.Body}</p>
-                </div>
-              ))
-            )}
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => navigate("/journal")}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-transform hover:scale-105 font-semibold w-full"
-              >
-                New Journal Entry
-              </button>
-            </div>
-          </motion.div>
+            <DiaryJournal onClose={() => setOpenJournal(false)} />
+          </div>
         </div>
-        </div>
+      )}
     </div>
   );
 };

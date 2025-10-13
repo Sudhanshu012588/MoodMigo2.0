@@ -61,7 +61,7 @@ export const fetchAccount = async(req,res)=>{
             }
         }
     } catch (error) {
-      // console.log("can't find account")
+      // //console.log("can't find account")
         return res.status(200).json({
             status:"failed",
             message:"Can't find account"

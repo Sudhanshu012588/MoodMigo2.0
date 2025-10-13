@@ -5,6 +5,7 @@ import router from "./Routes/Questionare.js";
 import Blogrouter from "./Routes/Blog.js";
 import connectDB from "./DB/DBconfig.js"
 import chatrouter from "./Routes/chat.js";
+import Journalrouter from "./Routes/Journal.js";
 // import GoogleGenerativeAI from "@google/generative-ai"
 
 dotenv.config();
@@ -37,7 +38,7 @@ app.use("/questionare", router);
 app.use("/blogs",Blogrouter)
 app.use("/manarah",chatrouter)
 app.use("/api/chats", chatrouter);
-
+app.use("/Journal",Journalrouter)
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

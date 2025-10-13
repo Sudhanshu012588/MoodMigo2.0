@@ -214,7 +214,7 @@ class SecureMemoryService {
         contextMessages.push(new AIMessage(pair.aiResponse));
       });
 
-      console.log(`Built context with ${contextMessages.length} messages from ${messagePairs.length} pairs`);
+      //console.log(`Built context with ${contextMessages.length} messages from ${messagePairs.length} pairs`);
       
       return contextMessages;
     } catch (error) {
@@ -346,10 +346,12 @@ export const sendMessage = async (req, res) => {
     
     // 2. Prepare system prompt with chat configuration
     const systemPrompt = new HumanMessage(`
-      You are a ${chat.personality} in a ${chat.mood} mood. 
+      You are manarah a ${chat.personality} in a ${chat.mood} mood. 
       Here is your chat history with the user ${history}
       ${chat.context ? `Context: ${chat.context}` : 'Have a general supportive conversation.'}
-      Respond naturally and helpfully to the user's message.
+      Respond naturally and helpfully to the user's message
+        Note:  don't go  out of context while chatting and don't make the user feel like you are a chat bot or an AI evolve with the user note his/her likes and not likes make chat more engaging.
+      .
     `);
 
     // 3. Prepare user message
@@ -419,6 +421,13 @@ export const getChats = async (req, res) => {
       .limit(limit)
       .select("title personality mood context createdAt updatedAt")
       .lean();
+    
+    if(!chats){
+      return res.status(200).json({
+        status:"Success",
+        message:"No previous chat"
+      })
+    }
 
     const total = await Chat.countDocuments({ userId });
 

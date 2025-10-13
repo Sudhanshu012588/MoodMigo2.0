@@ -45,7 +45,7 @@ export const submit = async (req, res) => {
         updatedAssessment.Report_Details = scoreResponse.reportDetails || scoreResponse.Report_Details;
         await updatedAssessment.save();
 
-        // console.log("scoreResponse.Report_Details,",scoreResponse)
+        // //console.log("scoreResponse.Report_Details,",scoreResponse)
         // Update or create UserPersona
         await UserPersona.findOneAndUpdate(
   { userId: id },
@@ -59,7 +59,7 @@ export const submit = async (req, res) => {
   { new: true, upsert: true }
 );
 
-        console.log(`✅ Scoring completed for userId: ${id}`);
+        //console.log(`✅ Scoring completed for userId: ${id}`);
       } catch (err) {
         console.error("❌ Error generating score / updating UserPersona:", err);
       }

@@ -14,6 +14,10 @@ import Login  from './Pages/Login';
 import BlogPage from "./Pages/BlogPage";
 import AccountPage from "./Pages/AccountPage"
 import Manarah from "./Pages/Manarah"
+import MentorsLogin from './MentorsComponents/MentorsLogin';
+import MentorsDashboard from './MentorsComponents/MentorsDashboard';
+import MentorsBlogPage from './MentorsComponents/MentorsBlogpage';
+import DiaryJournal from "./Components/DailyJournal";
 function App() {
   
   // const isLoggedIn = useUserState((state) => state.isLoggedIn);
@@ -55,6 +59,10 @@ function App() {
           <Route path="*" element={<NotFound />} />
           <Route path='/account/:id' element={<AccountPage/>}/>
           <Route path='/manarah' element={<Manarah/>}/>
+          <Route path='/mentorspage' element={<MentorsLogin/>}/>
+          <Route path='/mentorsdashboard/:mentorId' element={<MentorsDashboard/>}/>
+          <Route path='/mentordashboard/BlogPage' element={<MentorsBlogPage/>}/>
+          <Route path='/journal' element={<DiaryJournal/>}/>
         </Routes>
       </BrowserRouter>
     </>

@@ -10,12 +10,12 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import Navbar from "../Components/Navbar";
+import Navbar from "./MentorsNavbar";
 import CreateBlogAcc from "../Components/CreateBlogAcc";
-import MoodMigoLoading from "./LoadingPage";
+import MoodMigoLoading from "../Pages/LoadingPage";
 import { useNavigate } from "react-router-dom";
 import WriteBlog from "../Components/WriteBlog";
-import { account } from "../Appwrite/config";
+import { account } from "../Appwrite/MentorsConfig";
 import axios from "axios";
 const categories = [
   "All",
@@ -27,7 +27,7 @@ const categories = [
   "byMentors"
 ];
 
-const BlogPage = () => {
+const MentorsBlogPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [OpenAcc, setOpenAcc] = useState(false);
@@ -671,4 +671,4 @@ const Hearted = async (blogId: string) => {
   );
 };
 
-export default BlogPage;
+export default MentorsBlogPage;

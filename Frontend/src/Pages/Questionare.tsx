@@ -270,9 +270,7 @@ const Questionnaire: React.FC = () => {
         );
       case 1:
         const baseValidB = form.diagnosed.trim() !== "" && 
-                          form.FamilyMember.trim() !== "" && 
-                          form.treatment.trim() !== "" && 
-                          form.hospitalized.trim() !== "";
+                          form.FamilyMember.trim() !== ""
         if (!baseValidB) return false;
         
         const treatmentValid = form.treatment === "Yes" ? 
@@ -446,25 +444,6 @@ const Questionnaire: React.FC = () => {
                     label: "Any family member ever diagnosed with a mental health condition?",
                     type: "select",
                     options: ["Yes", "No"]
-                  },
-                  {
-                    name: "treatment",
-                    label: "Are you currently receiving mental health treatment?",
-                    type: "select",
-                    options: ["Yes", "No"],
-                    conditional: form.treatment === "Yes" && [
-                      { name: "treatmentType", label: "Type of Treatment", type: "text", placeholder: "Therapy, medication, etc." },
-                      { name: "provider", label: "Provider/Facility", type: "text", placeholder: "Provider Name/Facility" }
-                    ]
-                  },
-                  {
-                    name: "hospitalized",
-                    label: "Have you ever been hospitalized for a mental health issue?",
-                    type: "select",
-                    options: ["Yes", "No"],
-                    conditional: form.hospitalized === "Yes" && [
-                      { name: "hospitalReason", label: "Reason for hospitalization", type: "text", placeholder: "Reason" }
-                    ]
                   }
                 ].map((field, index) => (
                   <motion.div
@@ -491,30 +470,7 @@ const Questionnaire: React.FC = () => {
                       ))}
                     </select>
 
-                    {field.conditional && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4"
-                      >
-                        {field.conditional.map(condField => (
-                          <div key={condField.name}>
-                            <label className="block text-gray-800 font-medium mb-2">
-                              {condField.label} <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                              type={condField.type}
-                              name={condField.name}
-                              placeholder={condField.placeholder}
-                              value={form[condField.name] as string}
-                              onChange={handleChange}
-                              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
-                              required
-                            />
-                          </div>
-                        ))}
-                      </motion.div>
-                    )}
+                    
                   </motion.div>
                 ))}
               </section>

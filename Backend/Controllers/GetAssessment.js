@@ -1,7 +1,7 @@
 import UserPersona from "../Models/UserPersona.js";
 
 export const GetAssessment = async (req, res) => {
-    console.log(req.body)
+    //console.log(req.body)
   try {
     const { id } = req.body;
     if (!id) {

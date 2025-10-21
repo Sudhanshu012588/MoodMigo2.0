@@ -10,7 +10,7 @@ import {
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import crypto from 'crypto';
 import 'dotenv/config';
-
+import ChatHistory from "../Models/ChatHistory.js"
 // Initialize LLM
 const llm = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash",
@@ -543,7 +543,7 @@ export const deleteChat = async (req, res) => {
     const { chatId } = req.params;
 
     const chat = await Chat.findByIdAndDelete(chatId);
-    
+    const deleteHistory = await ChatHistory.deleteOne({uuid:chat.uuid})
     if (!chat) {
       return res.status(404).json({ 
         status: "failed",

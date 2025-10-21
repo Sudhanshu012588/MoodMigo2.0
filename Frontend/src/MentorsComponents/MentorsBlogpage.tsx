@@ -255,7 +255,7 @@ const Hearted = async (blogId: string) => {
 
   const goToDashboard = async () => {
     const user = await account.get();
-    navigate(`/account/${user.$id}`);
+    navigate(`/mentorsdashboard/${user.$id}`);
   };
 
   useEffect(() => {
@@ -371,23 +371,7 @@ const Hearted = async (blogId: string) => {
                   <PenSquare size={20} /> Write a Blog
                 </button>)}
                 
-                <div className="grid grid-cols-2 gap-3">
-                  {HasAccount&&(<button
-                    onClick={() => goToDashboard()}
-                    className="bg-white text-purple-600 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-purple-50 transition-all duration-300 border border-purple-200 shadow-sm hover:shadow-md font-medium"
-                  >
-                    <User size={18} />Your Account
-                  </button>)}
-                  {!HasAccount&&(
-<button
-                    onClick={() => setOpenAcc(true)}
-                    className="bg-white text-purple-600 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-purple-50 transition-all duration-300 border border-purple-200 shadow-sm hover:shadow-md font-medium"
-                  >
-                    <PenSquare size={18} /> Create Account
-                  </button>
-                  )}
-                  
-                </div>
+                
               </div>
             </div>
 

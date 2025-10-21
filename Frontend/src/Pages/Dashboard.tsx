@@ -25,7 +25,6 @@ const Dashboard: React.FC = () => {
   const [Score, setScore] = useState<number[]>([])
   
   // Dummy Data
-  const numberOfBlogs = 3;
   const professionals = [
     {
       $id: "1",
@@ -133,7 +132,7 @@ const Dashboard: React.FC = () => {
               onClick: () => navigate("/questionnaire"),
             },
             {
-              label: `${numberOfBlogs} Blogs`,
+              label: `Blogs`,
               description: "Explore community posts.",
               icon: <MessageCircle className="w-10 h-10 text-yellow-500" />,
               onClick: () => navigate("/blog"),

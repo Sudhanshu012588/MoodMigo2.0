@@ -56,9 +56,7 @@ const Navbar: React.FC = () => {
     });
   };
 
-  const handleMoodMigoClick = () => {
-    isLoggedIn ? navigate("/dashboard") : navigate("/");
-  };
+ 
 
   const navLinks = [
     {
@@ -77,7 +75,7 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between items-center px-6 md:px-12 py-4 w-full">
           {/* Logo */}
           <div
-            onClick={handleMoodMigoClick}
+            // onClick={handleMoodMigoClick}
             className="cursor-pointer text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-500 text-transparent bg-clip-text transition-transform duration-200 hover:scale-[1.02]"
           >
             MoodMigo

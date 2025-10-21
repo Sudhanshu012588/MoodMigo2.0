@@ -7,32 +7,31 @@ import { account } from "../Appwrite/config";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from 'react-markdown';
-
+import { Phone } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 // Types
-interface MessagePair {
-  id: string;
-  userMessage: string;
-  aiResponse: string;
+interface Message {
+  role: string;
+  content: string;
   timestamp: string;
 }
 
 interface Chat {
-  id: string;
-  title: string;
-  personality: string;
-  mood: string;
-  context: string;
-  messagePairs: MessagePair[];
-  messageCount?: number;
-  createdAt?: string;
-  updatedAt?: string;
+  _id: string;
+  uuid: string;
+  ChatName: string;
+  Personality: string;
+  Mood: string;
+  Context: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface NewChatData {
-  title: string;
-  personality: string;
-  mood: string;
-  context: string;
+  ChatName: string;
+  Personality: string;
+  Mood: string;
+  Context: string;
 }
 
 interface ThemeClasses {
@@ -47,14 +46,28 @@ interface ThemeClasses {
   border: string;
 }
 
+// LangChain Message Types
+interface LangChainMessage {
+  lc: number;
+  type: string;
+  id: string[];
+  kwargs: {
+    content: string;
+    additional_kwargs: Record<string, any>;
+    response_metadata?: Record<string, any>;
+    tool_calls?: any[];
+    invalid_tool_calls?: any[];
+  };
+}
+
 // Modal Component
 function Modal({ 
-  title, 
+  ChatName, 
   children, 
   onClose, 
   theme 
 }: { 
-  title: string; 
+  ChatName: string; 
   children: React.ReactNode; 
   onClose: () => void; 
   theme: ThemeClasses;
@@ -75,7 +88,7 @@ function Modal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-6 border-b border-white/20">
-          <h2 className="text-xl font-semibold">{title}</h2>
+          <h2 className="text-xl font-semibold">{ChatName}</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/10 rounded-full transition-colors"
@@ -95,16 +108,16 @@ function Modal({
 function ChatForm({ 
   newChatData, 
   setNewChatData, 
-  personalityOptions, 
-  moodOptions, 
+  PersonalityOptions, 
+  MoodOptions, 
   onSubmit, 
   onCancel,
   theme 
 }: { 
   newChatData: NewChatData;
   setNewChatData: (data: NewChatData) => void;
-  personalityOptions: string[];
-  moodOptions: string[];
+  PersonalityOptions: string[];
+  MoodOptions: string[];
   onSubmit: () => void;
   onCancel: () => void;
   theme: ThemeClasses;
@@ -115,8 +128,8 @@ function ChatForm({
         <label className="block text-sm font-medium mb-2">Chat Name *</label>
         <input
           type="text"
-          value={newChatData.title}
-          onChange={(e) => setNewChatData({ ...newChatData, title: e.target.value })}
+          value={newChatData.ChatName}
+          onChange={(e) => setNewChatData({ ...newChatData, ChatName: e.target.value })}
           placeholder="Give your chat a name..."
           className={`w-full px-4 py-3 rounded-xl ${theme.input} ${theme.border} border`}
         />
@@ -125,11 +138,11 @@ function ChatForm({
       <div>
         <label className="block text-sm font-medium mb-2">Personality</label>
         <select
-          value={newChatData.personality}
-          onChange={(e) => setNewChatData({ ...newChatData, personality: e.target.value })}
+          value={newChatData.Personality}
+          onChange={(e) => setNewChatData({ ...newChatData, Personality: e.target.value })}
           className={`w-full px-4 py-3 rounded-xl ${theme.input} ${theme.border} border`}
         >
-          {personalityOptions.map((option) => (
+          {PersonalityOptions.map((option) => (
             <option key={option} value={option}>{option}</option>
           ))}
         </select>
@@ -138,11 +151,11 @@ function ChatForm({
       <div>
         <label className="block text-sm font-medium mb-2">Mood</label>
         <select
-          value={newChatData.mood}
-          onChange={(e) => setNewChatData({ ...newChatData, mood: e.target.value })}
+          value={newChatData.Mood}
+          onChange={(e) => setNewChatData({ ...newChatData, Mood: e.target.value })}
           className={`w-full px-4 py-3 rounded-xl ${theme.input} ${theme.border} border`}
         >
-          {moodOptions.map((option) => (
+          {MoodOptions.map((option) => (
             <option key={option} value={option}>{option}</option>
           ))}
         </select>
@@ -151,8 +164,8 @@ function ChatForm({
       <div>
         <label className="block text-sm font-medium mb-2">Context (Optional)</label>
         <textarea
-          value={newChatData.context}
-          onChange={(e) => setNewChatData({ ...newChatData, context: e.target.value })}
+          value={newChatData.Context}
+          onChange={(e) => setNewChatData({ ...newChatData, Context: e.target.value })}
           placeholder="Any specific context for this conversation..."
           rows={3}
           className={`w-full px-4 py-3 rounded-xl ${theme.input} ${theme.border} border resize-none`}
@@ -198,8 +211,8 @@ function EditChatForm({
         <label className="block text-sm font-medium mb-2">Chat Name *</label>
         <input
           type="text"
-          value={newChatData.title}
-          onChange={(e) => setNewChatData({ ...newChatData, title: e.target.value })}
+          value={newChatData.ChatName}
+          onChange={(e) => setNewChatData({ ...newChatData, ChatName: e.target.value })}
           placeholder="Give your chat a name..."
           className={`w-full px-4 py-3 rounded-xl ${theme.input} ${theme.border} border`}
         />
@@ -208,8 +221,8 @@ function EditChatForm({
       <div>
         <label className="block text-sm font-medium mb-2">Personality</label>
         <select
-          value={newChatData.personality}
-          onChange={(e) => setNewChatData({ ...newChatData, personality: e.target.value })}
+          value={newChatData.Personality}
+          onChange={(e) => setNewChatData({ ...newChatData, Personality: e.target.value })}
           className={`w-full px-4 py-3 rounded-xl ${theme.input} ${theme.border} border`}
         >
           <option value="Supportive Listener">Supportive Listener</option>
@@ -224,8 +237,8 @@ function EditChatForm({
       <div>
         <label className="block text-sm font-medium mb-2">Mood</label>
         <select
-          value={newChatData.mood}
-          onChange={(e) => setNewChatData({ ...newChatData, mood: e.target.value })}
+          value={newChatData.Mood}
+          onChange={(e) => setNewChatData({ ...newChatData, Mood: e.target.value })}
           className={`w-full px-4 py-3 rounded-xl ${theme.input} ${theme.border} border`}
         >
           <option value="Calm">Calm</option>
@@ -240,8 +253,8 @@ function EditChatForm({
       <div>
         <label className="block text-sm font-medium mb-2">Context (Optional)</label>
         <textarea
-          value={newChatData.context}
-          onChange={(e) => setNewChatData({ ...newChatData, context: e.target.value })}
+          value={newChatData.Context}
+          onChange={(e) => setNewChatData({ ...newChatData, Context: e.target.value })}
           placeholder="Any specific context for this conversation..."
           rows={3}
           className={`w-full px-4 py-3 rounded-xl ${theme.input} ${theme.border} border resize-none`}
@@ -270,7 +283,7 @@ function EditChatForm({
 // Delete Confirmation Component
 function DeleteConfirmation({ 
   onConfirm, 
-  onCancel, 
+  onCancel,  
 }: { 
   onConfirm: () => void; 
   onCancel: () => void; 
@@ -308,7 +321,6 @@ function DeleteConfirmation({
 // Sidebar Component
 function Sidebar({ 
   isMobile, 
-  
   theme,  
   chats, 
   activeChat, 
@@ -366,37 +378,32 @@ function Sidebar({
       <div className="flex-1 overflow-y-auto py-3 px-2 hide-scrollbar">
         {chats.slice(0, 10).map((chat) => (
           <motion.div
-            key={chat.id}
+            key={chat._id}
             className="relative group"
           >
             <motion.button
               whileHover={{ scale: 1.03 }}
-              onClick={() => onChatSelect(chat.id)}
+              onClick={() => onChatSelect(chat.uuid)}
               className={`w-full text-left px-4 py-3 rounded-xl transition-all shadow-sm mb-2 ${
-                chat.id === activeChat
+                chat.uuid === activeChat
                   ? "bg-indigo-500 text-white font-semibold"
                   : `${theme.card} hover:opacity-80`
               }`}
             >
               <div className="flex items-center gap-3">
                 <MessageCircle size={16} />
-                <span className="truncate flex-1">{chat.title}</span>
+                <span className="truncate flex-1">{chat.ChatName}</span>
               </div>
               <div className="text-xs opacity-70 mt-1 truncate">
-                {chat.personality} • {chat.mood}
+                {chat.Personality} • {chat.Mood}
               </div>
-              {chat.messagePairs && chat.messagePairs.length > 0 && (
-                <div className="text-xs opacity-50 mt-1">
-                  {chat.messagePairs.length} conversations
-                </div>
-              )}
             </motion.button>
             
             <div className="absolute right-2 top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onEditChat(chat.id);
+                  onEditChat(chat._id);
                 }}
                 className="p-1 rounded-md bg-white/80 text-gray-600 shadow-sm hover:bg-white hover:text-indigo-600 transition-colors"
                 title="Edit chat"
@@ -406,7 +413,7 @@ function Sidebar({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDeleteChat(chat.id);
+                  onDeleteChat(chat._id);
                 }}
                 className="p-1 rounded-md bg-white/80 text-gray-600 shadow-sm hover:bg-red-50 hover:text-red-600 transition-colors"
                 title="Delete chat"
@@ -438,7 +445,7 @@ function Sidebar({
 }
 
 // Message Bubble Component
-function MessageBubble({ message, theme }: { message: { role: string; content: string; id: string; timestamp: string }; theme: ThemeClasses }) {
+function MessageBubble({ message, theme }: { message: Message; theme: ThemeClasses }) {
   const markdownComponents: Components = {
     h1: (props) => <h1 className="text-lg font-bold mt-2 mb-1" {...props} />,
     h2: (props) => <h2 className="text-md font-bold mt-2 mb-1" {...props} />,
@@ -501,23 +508,45 @@ function EmptyState({ currentChat, theme }: { currentChat: Chat | null; theme: T
       <div className={`rounded-3xl p-8 max-w-md mx-auto shadow-lg ${theme.card}`}>
         <MessageCircle size={48} className="mx-auto text-indigo-400 mb-4" />
         <h3 className="text-xl font-semibold mb-2">
-          {currentChat?.title || "New Chat"}
+          {currentChat?.ChatName || "New Chat"}
         </h3>
         <p className="opacity-75 mb-4">
-          {currentChat?.personality} in a {currentChat?.mood?.toLowerCase()} mood
+          {currentChat?.Personality} in a {currentChat?.Mood?.toLowerCase()} Mood
         </p>
         <p className="opacity-60 text-sm">
-          Start the conversation and I'll adapt to your chosen personality style.
+          Start the conversation and I'll adapt to your chosen Personality style.
         </p>
       </div>
     </motion.div>
   );
 }
 
+// Helper function to convert LangChain messages to our Message format
+const convertLangChainToMessages = (langChainHistory: LangChainMessage[]): Message[] => {
+  return langChainHistory.map((msg) => {
+    let role = "assistant";
+    let content = msg.kwargs.content || "";
+    
+    // Determine role based on message type
+    if (msg.id.includes("HumanMessage")) {
+      role = "user";
+    } else if (msg.id.includes("AIMessage")) {
+      role = "assistant";
+    }
+    
+    return {
+      role,
+      content,
+      timestamp: new Date().toISOString() // You might want to extract actual timestamp if available
+    };
+  });
+};
+
 // Main Chat Page Component
 export default function ChatPage() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -525,10 +554,10 @@ export default function ChatPage() {
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [deleteConfirmChatId, setDeleteConfirmChatId] = useState<string | null>(null);
   const [newChatData, setNewChatData] = useState<NewChatData>({
-    title: "",
-    personality: "Supportive Listener",
-    mood: "Calm",
-    context: ""
+    ChatName: "",
+    Personality: "Supportive Listener",
+    Mood: "Calm",
+    Context: ""
   });
   const [isLoading, setIsLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -536,16 +565,17 @@ export default function ChatPage() {
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const personalityOptions = [
+  const PersonalityOptions = [
     "Supportive Listener",
     "Motivational Coach",
     "Professional Therapist",
     "Friendly Advisor",
     "Creative Thinker",
-    "Logical Problem Solver"
+    "Logical Problem Solver",
+    "Love Partner"
   ];
 
-  const moodOptions = [
+  const MoodOptions = [
     "Calm",
     "Enthusiastic",
     "Empathetic",
@@ -571,37 +601,27 @@ export default function ChatPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Load message pairs for active chat
-  const loadChatMessages = useCallback(async (chatId: string) => {
-    if (!chatId) return;
+  // Load chat history for active chat
+  const loadChatHistory = useCallback(async (uuid: string) => {
+    if (!uuid) return;
     
     setIsLoadingMessages(true);
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/${chatId}/messages?limit=50`
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/manarah/history`,
+        { uuid }
       );
 
-      if (response.data.status === "success" && response.data.messages) {
-        // Transform to MessagePair array
-        const messagePairs: MessagePair[] = response.data.messages.map((msg: any) => ({
-          id: msg.id,
-          userMessage: msg.userMessage,
-          aiResponse: msg.aiResponse,
-          timestamp: msg.timestamp
-        }));
-
-        console.log(`Loaded ${messagePairs.length} message pairs for chat ${chatId}`);
-
-        setChats(prev => prev.map(chat => 
-          chat.id === chatId 
-            ? { ...chat, messagePairs }
-            : chat
-        ));
+      if (response.data.status === "success" && response.data.history) {
+        // Convert LangChain format to our Message format
+        const convertedMessages = convertLangChainToMessages(response.data.history);
+        setMessages(convertedMessages);
+        console.log(`Loaded ${convertedMessages.length} messages for chat ${uuid}`);
       }
     } catch (error) {
-      console.error("Error loading messages:", error);
+      console.error("Error loading chat history:", error);
       if (!axios.isAxiosError(error) || error.response?.status !== 404) {
-        toast.error("Failed to load messages");
+        toast.error("Failed to load chat history");
       }
     } finally {
       setIsLoadingMessages(false);
@@ -612,30 +632,30 @@ export default function ChatPage() {
   const getChats = useCallback(async () => {
     try {
       const user = await account.get();
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/?userId=${user.$id}&limit=20`
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/manarah/getchats`,
+        { userId: user.$id }
       );
       
       if (response.data.status === "success") {
         const fetchedChats: Chat[] = response.data.chats.map((chat: any) => ({
-          id: chat._id,
-          title: chat.title,
-          personality: chat.personality,
-          mood: chat.mood,
-          context: chat.context,
-          messagePairs: [], // Will be loaded separately
-          messageCount: chat.messageCount || 0,
+          _id: chat._id,
+          uuid: chat.uuid,
+          ChatName: chat.ChatName,
+          Personality: chat.Personality,
+          Mood: chat.Mood,
+          Context: chat.Context,
           createdAt: chat.createdAt,
           updatedAt: chat.updatedAt
         }));
         
         setChats(fetchedChats);
         
-        // Set active chat to the first one if available and load its messages
+        // Set active chat to the first one if available and load its history
         if (fetchedChats.length > 0 && !activeChat) {
-          const firstChatId = fetchedChats[0].id;
-          setActiveChat(firstChatId);
-          await loadChatMessages(firstChatId);
+          const firstChat = fetchedChats[0];
+          setActiveChat(firstChat.uuid);
+          await loadChatHistory(firstChat.uuid);
         }
         
         setHasInitialLoad(true);
@@ -645,7 +665,7 @@ export default function ChatPage() {
       toast.error("Failed to load chats");
       setHasInitialLoad(true);
     }
-  }, [activeChat, loadChatMessages]);
+  }, [activeChat, loadChatHistory]);
 
   // Initial load
   useEffect(() => {
@@ -654,48 +674,24 @@ export default function ChatPage() {
     }
   }, [hasInitialLoad, getChats]);
 
-  // Load messages when active chat changes
+  // Load history when active chat changes
   useEffect(() => {
     if (activeChat && hasInitialLoad) {
-      loadChatMessages(activeChat);
+      loadChatHistory(activeChat);
     }
-  }, [activeChat, hasInitialLoad, loadChatMessages]);
+  }, [activeChat, hasInitialLoad, loadChatHistory]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     if (hasInitialLoad) {
       scrollToBottom();
     }
-  }, [chats, activeChat, hasInitialLoad, scrollToBottom]);
+  }, [messages, hasInitialLoad, scrollToBottom]);
 
   // Get current chat
   const currentChat = useMemo(() => {
-    return chats.find((c) => c.id === activeChat) || null;
+    return chats.find((c) => c.uuid === activeChat) || null;
   }, [chats, activeChat]);
-
-  // Convert message pairs to flat array for rendering
-  const currentMessages = useMemo(() => {
-    if (!currentChat?.messagePairs) return [];
-    
-    const messages: Array<{ role: string; content: string; id: string; timestamp: string }> = [];
-    
-    currentChat.messagePairs.forEach(pair => {
-      messages.push({
-        role: "user",
-        content: pair.userMessage,
-        id: `${pair.id}-user`,
-        timestamp: pair.timestamp
-      });
-      messages.push({
-        role: "assistant",
-        content: pair.aiResponse,
-        id: `${pair.id}-ai`,
-        timestamp: pair.timestamp
-      });
-    });
-    
-    return messages;
-  }, [currentChat]);
 
   // Send message function
   const handleSend = async () => {
@@ -705,38 +701,38 @@ export default function ChatPage() {
     setInput("");
     setIsLoading(true);
 
-    // Get current chat state before optimistic update
-    const currentChatBeforeUpdate = chats.find(chat => chat.id === activeChat);
-    const currentPairs = currentChatBeforeUpdate?.messagePairs || [];
-
-    // Optimistically update UI - add temporary user message
-    const tempPairId = `temp-${Date.now()}`;
-    const tempPair: MessagePair = {
-      id: tempPairId,
-      userMessage,
-      aiResponse: "", // Placeholder for AI response
+    // Optimistically update UI - add user message
+    const userMessageObj: Message = {
+      role: "user",
+      content: userMessage,
       timestamp: new Date().toISOString()
     };
 
-    const updatedChatsWithTempPair = chats.map(chat =>
-      chat.id === activeChat
-        ? {
-            ...chat,
-            messagePairs: [...currentPairs, tempPair],
-          }
-        : chat
-    );
-    setChats(updatedChatsWithTempPair);
+    setMessages(prev => [...prev, userMessageObj]);
 
     try {
+      const user = await account.get();
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/messages/${activeChat}`,
-        { message: userMessage }
+        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/manarah/response`,
+        { 
+          userId: user.$id,
+          uuid: activeChat,
+          message: userMessage 
+        }
       );
 
-      if (response.data.status === "success" && response.data.response) {
-        // Reload messages from backend to get the actual encrypted storage
-        await loadChatMessages(activeChat);
+      if (response.data.status === "success" && response.data.message) {
+        // Add AI response to messages
+        const aiMessage: Message = {
+          role: "assistant",
+          content: response.data.message,
+          timestamp: new Date().toISOString()
+        };
+
+        setMessages(prev => [...prev, aiMessage]);
+        
+        // Refresh chat history to ensure consistency
+        // await loadChatHistory(activeChat);
       } else {
         throw new Error("Failed to get AI response");
       }
@@ -745,16 +741,8 @@ export default function ChatPage() {
       const errorMessage = error.response?.data?.message || "Failed to send message";
       toast.error(errorMessage);
       
-      // Revert optimistic update on error
-      const revertedChats = chats.map(chat =>
-        chat.id === activeChat
-          ? {
-              ...chat,
-              messagePairs: currentPairs,
-            }
-          : chat
-      );
-      setChats(revertedChats);
+      // Remove optimistic user message on error
+      setMessages(prev => prev.filter(msg => msg.timestamp !== userMessageObj.timestamp));
       setInput(userMessage);
     } finally {
       setIsLoading(false);
@@ -766,16 +754,16 @@ export default function ChatPage() {
   // Create new chat
   const handleCreateNewChat = () => {
     setNewChatData({
-      title: "",
-      personality: "Supportive Listener",
-      mood: "Calm",
-      context: ""
+      ChatName: "",
+      Personality: "Supportive Listener",
+      Mood: "Calm",
+      Context: ""
     });
     setShowChatForm(true);
   };
 
   const handleSubmitChatForm = async () => {
-    if (!newChatData.title.trim()) {
+    if (!newChatData.ChatName.trim()) {
       toast.error("Please give your chat a name!");
       return;
     }
@@ -783,29 +771,31 @@ export default function ChatPage() {
     try {
       const user = await account.get();
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats`,
+        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/manarah/createchat`,
         {
           userId: user.$id,
-          title: newChatData.title,
-          personality: newChatData.personality,
-          mood: newChatData.mood,
-          context: newChatData.context
+          ChatName: newChatData.ChatName,
+          Personality: newChatData.Personality,
+          Mood: newChatData.Mood,
+          Context: newChatData.Context
         }
       );
 
       if (response.data.status === "success") {
         const newChat: Chat = {
-          id: response.data.chat._id,
-          title: response.data.chat.title,
-          personality: response.data.chat.personality,
-          mood: response.data.chat.mood,
-          context: response.data.chat.context,
-          messagePairs: [],
-          createdAt: response.data.chat.createdAt
+          _id: response.data.chat._id,
+          uuid: response.data.uuid,
+          ChatName: response.data.chat.ChatName,
+          Personality: response.data.chat.Personality,
+          Mood: response.data.chat.Mood,
+          Context: response.data.chat.Context,
+          createdAt: response.data.chat.createdAt,
+          updatedAt: response.data.chat.updatedAt
         };
 
         setChats(prev => [newChat, ...prev]);
-        setActiveChat(newChat.id);
+        setActiveChat(newChat.uuid);
+        setMessages([]); // Clear messages for new chat
         setShowChatForm(false);
         toast.success("New chat created successfully!");
       }
@@ -817,20 +807,20 @@ export default function ChatPage() {
 
   // Edit chat
   const handleEditChatName = (chatId: string) => {
-    const chat = chats.find(c => c.id === chatId);
+    const chat = chats.find(c => c._id === chatId);
     if (chat) {
       setNewChatData({
-        title: chat.title,
-        personality: chat.personality,
-        mood: chat.mood,
-        context: chat.context
+        ChatName: chat.ChatName,
+        Personality: chat.Personality,
+        Mood: chat.Mood,
+        Context: chat.Context
       });
       setEditingChatId(chatId);
     }
   };
 
   const handleSaveChatEdit = async () => {
-    if (!newChatData.title.trim() || !editingChatId) {
+    if (!newChatData.ChatName.trim() || !editingChatId) {
       toast.error("Chat name cannot be empty!");
       return;
     }
@@ -839,22 +829,22 @@ export default function ChatPage() {
       const response = await axios.put(
         `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/${editingChatId}`,
         {
-          title: newChatData.title,
-          personality: newChatData.personality,
-          mood: newChatData.mood,
-          context: newChatData.context
+          ChatName: newChatData.ChatName,
+          Personality: newChatData.Personality,
+          Mood: newChatData.Mood,
+          Context: newChatData.Context
         }
       );
 
       if (response.data.status === "success") {
         const updatedChats = chats.map(chat =>
-          chat.id === editingChatId
+          chat._id === editingChatId
             ? {
                 ...chat,
-                title: newChatData.title,
-                personality: newChatData.personality,
-                mood: newChatData.mood,
-                context: newChatData.context
+                ChatName: newChatData.ChatName,
+                Personality: newChatData.Personality,
+                Mood: newChatData.Mood,
+                Context: newChatData.Context
               }
             : chat
         );
@@ -875,14 +865,16 @@ export default function ChatPage() {
       const response = await axios.delete(`${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/${chatId}`);
       
       if (response.data.status === "success") {
-        const updatedChats = chats.filter(chat => chat.id !== chatId);
+        const deletedChat = chats.find(chat => chat._id === chatId);
+        const updatedChats = chats.filter(chat => chat._id !== chatId);
         setChats(updatedChats);
         
-        if (chatId === activeChat) {
+        if (deletedChat?.uuid === activeChat) {
           if (updatedChats.length > 0) {
-            setActiveChat(updatedChats[0].id);
+            setActiveChat(updatedChats[0].uuid);
           } else {
             setActiveChat(null);
+            setMessages([]);
           }
         }
         
@@ -902,27 +894,19 @@ export default function ChatPage() {
   // Refresh messages for current chat
   const refreshCurrentChatMessages = useCallback(() => {
     if (activeChat) {
-      loadChatMessages(activeChat);
+      loadChatHistory(activeChat);
     }
-  }, [activeChat, loadChatMessages]);
+  }, [activeChat, loadChatHistory]);
 
   // Clear chat messages
   const handleClearChatMessages = async () => {
     if (!activeChat) return;
     
     try {
-      const response = await axios.delete(
-        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/${activeChat}/messages`
-      );
-
-      if (response.data.status === "success") {
-        setChats(prev => prev.map(chat =>
-          chat.id === activeChat
-            ? { ...chat, messagePairs: [], messageCount: 0 }
-            : chat
-        ));
-        toast.success("Chat messages cleared successfully!");
-      }
+      // Note: You might want to add a dedicated endpoint for clearing chat history
+      // For now, we'll just clear the local state
+      setMessages([]);
+      toast.success("Chat messages cleared successfully!");
     } catch (error) {
       console.error("Error clearing chat messages:", error);
       toast.error("Failed to clear chat messages");
@@ -954,21 +938,22 @@ export default function ChatPage() {
         border: "border-white/30"
       };
 
+      const Navigate = useNavigate();
   return (
     <div className={`flex h-screen ${themeClasses.bg} ${themeClasses.text} transition-colors duration-300`}>
       {/* Modals */}
       <AnimatePresence>
         {showChatForm && (
           <Modal
-            title="Customize Your Chat"
+            ChatName="Customize Your Chat"
             onClose={() => setShowChatForm(false)}
             theme={themeClasses}
           >
             <ChatForm
               newChatData={newChatData}
               setNewChatData={setNewChatData}
-              personalityOptions={personalityOptions}
-              moodOptions={moodOptions}
+              PersonalityOptions={PersonalityOptions}
+              MoodOptions={MoodOptions}
               onSubmit={handleSubmitChatForm}
               onCancel={() => setShowChatForm(false)}
               theme={themeClasses}
@@ -978,7 +963,7 @@ export default function ChatPage() {
 
         {editingChatId && (
           <Modal
-            title="Edit Chat"
+            ChatName="Edit Chat"
             onClose={() => setEditingChatId(null)}
             theme={themeClasses}
           >
@@ -994,7 +979,7 @@ export default function ChatPage() {
 
         {deleteConfirmChatId && (
           <Modal
-            title="Delete Chat"
+            ChatName="Delete Chat"
             onClose={() => setDeleteConfirmChatId(null)}
             theme={themeClasses}
           >
@@ -1077,18 +1062,18 @@ export default function ChatPage() {
         {/* Header with Chat Info */}
         <div className={`p-4 ${themeClasses.card} ${themeClasses.border} border-b flex justify-between items-center`}>
           <div className="flex-1 text-center">
-            <h2 className="font-semibold text-lg">{currentChat?.title || "New Chat"}</h2>
+            <h2 className="font-semibold text-lg">{currentChat?.ChatName || "New Chat"}</h2>
             <p className="text-sm opacity-75">
-              {currentChat?.personality} • {currentChat?.mood}
+              {currentChat?.Personality} • {currentChat?.Mood}
             </p>
-            {currentChat?.context && (
+            {currentChat?.Context && (
               <p className="text-xs opacity-60 mt-1 max-w-2xl mx-auto">
-                Context: {currentChat.context}
+                Context: {currentChat.Context}
               </p>
             )}
-            {currentChat?.messagePairs && currentChat.messagePairs.length > 0 && (
+            {messages.length > 0 && (
               <p className="text-xs opacity-50 mt-1">
-                {currentChat.messagePairs.length} conversations • 
+                {messages.length} messages • 
                 <button 
                   onClick={refreshCurrentChatMessages}
                   className="underline hover:no-underline mx-1"
@@ -1132,10 +1117,10 @@ export default function ChatPage() {
                 <div className="w-3 h-3 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
-          ) : currentMessages.length > 0 ? (
-            currentMessages.map((msg) => (
+          ) : messages.length > 0 ? (
+            messages.map((msg, index) => (
               <MessageBubble
-                key={msg.id}
+                key={`${msg.timestamp}-${index}`}
                 message={msg}
                 theme={themeClasses}
               />
@@ -1177,12 +1162,26 @@ export default function ChatPage() {
               disabled={isLoading || !input.trim()}
               className={`rounded-full p-3 shadow-md flex-shrink-0 ${
                 isLoading || !input.trim() 
-                  ? 'bg-gray-400 cursor-not-allowed' 
+                  ? 'bg-purple-200 cursor-pointer' 
                   : themeClasses.button
               }`}
             >
               <Send size={18} />
             </motion.button>
+
+              <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => Navigate(`/manarah/voicecall/${activeChat}`)}
+        disabled={!activeChat} // ✅ only disable if no active chat selected
+        className={`rounded-full p-3 shadow-md flex-shrink-0 transition-all ${
+          !activeChat
+            ? "bg-purple-200 cursor-not-allowed opacity-60"
+            : themeClasses.button
+        }`}
+      >
+        <Phone size={18} />
+      </motion.button>
           </div>
         </div>
       </div>

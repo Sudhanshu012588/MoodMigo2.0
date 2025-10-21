@@ -1,13 +1,10 @@
 import './App.css';
-import 'react-toastify/dist/ReactToastify.css'; // ✅ Add this
-// import {useEffect} from 'react'
-// import {account} from './Appwrite/config'
+import 'react-toastify/dist/ReactToastify.css';
 import Homepage from './Pages/Homepage';
 import NotFound from './Pages/NotFound';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import Signup from "./Pages/Signup"
-// import { useUserState } from './Store/Userstore';
 import Dashboard from './Pages/Dashboard';
 import MoodMigoQuestionnaire from  './Pages/Questionare';
 import Login  from './Pages/Login';
@@ -18,6 +15,8 @@ import MentorsLogin from './MentorsComponents/MentorsLogin';
 import MentorsDashboard from './MentorsComponents/MentorsDashboard';
 import MentorsBlogPage from './MentorsComponents/MentorsBlogpage';
 import DiaryJournal from "./Components/DailyJournal";
+import ChatPage from './Pages/Manarah';
+import ManarahCall from "./Pages/ManarahVoiceCall";
 function App() {
   
   // const isLoggedIn = useUserState((state) => state.isLoggedIn);
@@ -63,6 +62,8 @@ function App() {
           <Route path='/mentorsdashboard/:mentorId' element={<MentorsDashboard/>}/>
           <Route path='/mentordashboard/BlogPage' element={<MentorsBlogPage/>}/>
           <Route path='/journal' element={<DiaryJournal/>}/>
+          <Route path='/manarah/voicecall/:uuid' element={<ManarahCall/>}/>
+          <Route path='/manarah/chat' element={<ChatPage/>}/>
         </Routes>
       </BrowserRouter>
     </>

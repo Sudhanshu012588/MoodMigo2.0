@@ -6,43 +6,25 @@ const ChatSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  title: {
-    type: String,
-    required: true
+  uuid:{
+    type:String,
+    require:true
   },
-  personality: {
-    type: String,
-    default: "Supportive Listener"
+  ChatName:{
+    type:String,
+    require:true
   },
-  mood: {
-    type: String,
-    default: "Calm"
+  Personality:{
+    type:String,
+    require:true
   },
-  context: {
-    type: String,
-    default: ""
+  Mood:{
+    type:String,
+    require:true
   },
-  // Store all message pairs in an array within the same document
-  messages: [{
-    userMessage: {
-      encryptedData: {
-        iv: { type: String, required: true },
-        data: { type: String, required: true },
-        authTag: { type: String, required: true },
-        version: { type: String, default: '1.0' }
-      },
-      timestamp: { type: Date, default: Date.now }
-    },
-    aiResponse: {
-      encryptedData: {
-        iv: { type: String, required: true },
-        data: { type: String, required: true },
-        authTag: { type: String, required: true },
-        version: { type: String, default: '1.0' }
-      },
-      timestamp: { type: Date, default: Date.now }
-    }
-  }],
+  Context:{
+    type:String
+  },
   createdAt: { 
     type: Date, 
     default: Date.now 
@@ -55,7 +37,6 @@ const ChatSchema = new mongoose.Schema({
 
 // Index for faster queries
 ChatSchema.index({ userId: 1, createdAt: -1 });
-ChatSchema.index({ "messages.timestamp": 1 });
 
 // Update updatedAt before saving
 ChatSchema.pre('save', function(next) {

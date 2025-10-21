@@ -7,6 +7,7 @@ import {
   Users,
   Info,
   UserPlus,
+  BookText,
 } from "lucide-react";
 import { useUserState } from "../Store/Userstore";
 import { account } from "../Appwrite/config";
@@ -15,21 +16,21 @@ import { useNavigate, useLocation } from "react-router-dom";
 const Navbar: React.FC = () => {
   const setIsLoggedIn = useUserState((state) => state.setIsLoggedIn);
   const isLoggedIn = useUserState((state) => state.isLoggedIn);
-
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    account.get().then((res) => {
-      if (res.$id) setIsLoggedIn(true);
-    });
+    account
+      .get()
+      .then((res) => {
+        if (res.$id) setIsLoggedIn(true);
+      })
+      .catch(() => setIsLoggedIn(false));
   }, []);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
+    if (element) element.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleScrollTo = (id: string) => {
@@ -41,11 +42,7 @@ const Navbar: React.FC = () => {
   };
 
   const handleNavigate = (path: string) => {
-    if (isLoggedIn && path === "/") {
-      navigate("/dashboard");
-    } else {
-      navigate(path);
-    }
+    navigate(path);
   };
 
   const handleLogout = () => {
@@ -59,15 +56,19 @@ const Navbar: React.FC = () => {
     isLoggedIn ? navigate("/dashboard") : navigate("/");
   };
 
-  const navLinks = [
-    {
-      name: isLoggedIn ? "Dashboard" : "Home",
-      icon: isLoggedIn ? LayoutDashboard : Home,
-      action: () => handleNavigate("/"),
-    },
-    { name: "Services", icon: Users, action: () => handleScrollTo("services") },
-    { name: "About", icon: Info, action: () => handleScrollTo("about") },
-  ];
+  // Dynamic links based on login state
+  const navLinks = isLoggedIn
+    ? [
+        { name: "Dashboard", icon: LayoutDashboard, action: () => navigate("/dashboard") },
+        { name: "Manarah", icon: Users, action: () => navigate("/manarah") },
+        { name: "Blog", icon: BookText, action: () => navigate("/blog") },
+        { name: "About", icon: Info, action: () => handleScrollTo("about") },
+      ]
+    : [
+        { name: "Home", icon: Home, action: () => handleNavigate("/") },
+        { name: "Services", icon: Users, action: () => handleScrollTo("services") },
+        { name: "About", icon: Info, action: () => handleScrollTo("about") },
+      ];
 
   return (
     <nav>
@@ -105,16 +106,14 @@ const Navbar: React.FC = () => {
             </button>
 
             {/* Sign Up / Dashboard */}
-            <button
-              onClick={() =>
-                isLoggedIn
-                  ? handleNavigate("/dashboard")
-                  : handleNavigate("/signup")
-              }
-              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-full shadow-md transition-all duration-300"
-            >
-              {isLoggedIn ? "Dashboard" : "Sign Up"}
-            </button>
+            {!isLoggedIn && (
+              <button
+                onClick={() => handleNavigate("/signup")}
+                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-full shadow-md transition-all duration-300"
+              >
+                Sign Up
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -145,17 +144,15 @@ const Navbar: React.FC = () => {
           </button>
 
           {/* Sign Up / Dashboard */}
-          <button
-            onClick={() =>
-              isLoggedIn
-                ? handleNavigate("/dashboard")
-                : handleNavigate("/signup")
-            }
-            className="flex flex-col items-center text-purple-600 hover:text-purple-800 transition-colors text-xs"
-          >
-            <UserPlus size={22} />
-            <span>{isLoggedIn ? "Dashboard" : "Sign Up"}</span>
-          </button>
+          {!isLoggedIn && (
+            <button
+              onClick={() => handleNavigate("/signup")}
+              className="flex flex-col items-center text-purple-600 hover:text-purple-800 transition-colors text-xs"
+            >
+              <UserPlus size={22} />
+              <span>Sign Up</span>
+            </button>
+          )}
         </div>
       </div>
     </nav>

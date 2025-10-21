@@ -12,6 +12,8 @@ import {
   healthCheck
 } from '../Controllers/Chat.js';
 
+
+import {getRes,getManarahAgent,renderChat,ChatHistory} from "../Controllers/Manarah.js"
 const chatrouter = express.Router();
 
 // Health check
@@ -29,6 +31,11 @@ chatrouter.post('/messages/:chatId', sendMessage);
 chatrouter.get('/:chatId/messages', getChatMessages);
 chatrouter.delete('/:chatId/messages', clearChatMessages);
 
+
+
+chatrouter.post("/manarah/response",getRes)
+chatrouter.post("/manarah/createchat",getManarahAgent)
+chatrouter.post("/manarah/getchats",renderChat)
+chatrouter.post("/manarah/history",ChatHistory)
+
 export default chatrouter;
-
-

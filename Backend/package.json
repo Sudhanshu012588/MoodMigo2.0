@@ -14,9 +14,10 @@
   "dependencies": {
     "@google/genai": "^1.21.0",
     "@google/generative-ai": "^0.24.1",
-    "@langchain/core": "^1.0.0-alpha.7",
+    "@langchain/core": "^0.3.78",
     "@langchain/google-genai": "^0.2.18",
     "@langchain/langgraph": "^0.4.9",
+    "@langchain/langgraph-checkpoint": "^0.1.1",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

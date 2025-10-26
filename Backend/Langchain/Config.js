@@ -1,7 +1,6 @@
 // Langchain/Config.js
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage, AIMessage, SystemMessage } from "@langchain/core/messages";
-
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 export class Manarah {
   constructor({ threadId, personality, mood, context, history = [] }) {
     this.threadId = threadId;

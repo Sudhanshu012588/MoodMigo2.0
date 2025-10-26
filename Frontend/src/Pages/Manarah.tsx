@@ -121,7 +121,9 @@ function ChatForm({
   onSubmit: () => void;
   onCancel: () => void;
   theme: ThemeClasses;
-}) {
+}) 
+{
+  const [created, setCreated] = useState(false);
   return (
     <div className="space-y-4">
       <div>
@@ -180,11 +182,16 @@ function ChatForm({
           Cancel
         </button>
         <button
-          onClick={onSubmit}
+          onClick={()=>{
+            onSubmit();
+            setCreated(true);
+          }}
           className="flex-1 px-4 py-3 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 transition-colors font-medium flex items-center justify-center gap-2"
+          disabled={created}
         >
           <Plus size={16} />
-          Create Chat
+          {created? "Creating..." :"Create Chat"}
+          
         </button>
       </div>
     </div>
@@ -903,8 +910,12 @@ export default function ChatPage() {
     if (!activeChat) return;
     
     try {
-      // Note: You might want to add a dedicated endpoint for clearing chat history
-      // For now, we'll just clear the local state
+      await axios.post(
+        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/manarah/clearhsitory`,
+        { uuid: activeChat,
+          userId: (await account.get()).$id
+         }
+      ).then((res) => {console.log("Chat history cleared successfully",res.data);});
       setMessages([]);
       toast.success("Chat messages cleared successfully!");
     } catch (error) {
@@ -1083,7 +1094,7 @@ export default function ChatPage() {
                 • 
                 <button 
                   onClick={handleClearChatMessages}
-                  className="underline hover:no-underline mx-1 text-red-500"
+                  className="underline hover:no-underline mx-1 text-red-500 cursor-pointer"
                 >
                   Clear
                 </button>

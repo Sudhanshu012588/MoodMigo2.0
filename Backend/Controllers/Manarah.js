@@ -2,6 +2,7 @@ import { Manarah } from "../Langchain/Config.js";
 import { getChatHistory, saveChatHistory } from "../utils/chatMemory.js";
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import chat from "../Models/Chat.js"
+import ChatHistory from "../Models/ChatHistory.js";
 export const getRes = async (req, res) => {
   try {
     const { userId, uuid, message} = req.body;
@@ -123,7 +124,7 @@ export const renderChat = async(req,res)=>{
   }
 }
 
-export const ChatHistory = async (req, res) => {
+export const chatHistory = async (req, res) => {
   try {
     const { uuid } = req.body;
 
@@ -149,3 +150,36 @@ export const ChatHistory = async (req, res) => {
     });
   }
 };
+
+
+export const clearHistory = async(req,res)=>{
+  try{
+    const {userId,uuid}= req.body;
+
+    if(!userId || !uuid){
+      return res.status(400).json({
+        status:"failed",
+        message:"Please provide all the fields"
+      })
+    }
+    console.log(userId,uuid)
+      const targetChat = await ChatHistory.updateOne(
+        {uuid:uuid},
+        { $set: { encryptedHistory: " " } }
+      )
+      if(targetChat){
+        return res.status(200).json({
+          status:"success",
+          targetChat
+        })
+      }
+      else{
+        throw new Error("Can't clear chat history")
+      }
+  }catch(e){
+    return res.status(500).json({
+      status:"failed",
+      message:e
+    })
+  }
+}

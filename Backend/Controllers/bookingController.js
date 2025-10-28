@@ -21,14 +21,14 @@ export const getBookingsByMentor = async (req, res) => {
 };
 
 export const getBookingsByUser = async (req, res) => {
-  console.log("Controller called")
+  //console.log("Controller called")
   try {
     const { userId } = req.params;
 
     const bookings = await Booking.find({
       userId
     });
-    console.log("my bookings,",bookings)
+    //console.log("my bookings,",bookings)
     res.status(200).json({
       status:"success",
       bookings });

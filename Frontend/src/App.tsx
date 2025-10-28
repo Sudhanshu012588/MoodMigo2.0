@@ -17,6 +17,8 @@ import MentorsBlogPage from './MentorsComponents/MentorsBlogpage';
 import DiaryJournal from "./Components/DailyJournal";
 import ChatPage from './Pages/Manarah';
 import ManarahCall from "./Pages/ManarahVoiceCall";
+import BookSession from './Pages/ProffesionalsList';
+import TherapistProfile from './Pages/TherapistProfile';
 function App() {
   
   // const isLoggedIn = useUserState((state) => state.isLoggedIn);
@@ -64,6 +66,8 @@ function App() {
           <Route path='/journal' element={<DiaryJournal/>}/>
           <Route path='/manarah/voicecall/:uuid' element={<ManarahCall/>}/>
           <Route path='/manarah/chat' element={<ChatPage/>}/>
+          <Route path='/therapists' element={<BookSession/>}/>
+          <Route path='/therapist/:therapistId' element={<TherapistProfile/>}/>
         </Routes>
       </BrowserRouter>
     </>

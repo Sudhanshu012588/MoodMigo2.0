@@ -5,13 +5,14 @@ import { Users, Calendar, MessageCircle, BookOpen } from "lucide-react";
 import { account } from "../Appwrite/config";
 import { toast } from "react-toastify";
 import { useUserState } from "../Store/Userstore";
-import { useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import Navbar from "../Components/Navbar";
 import MoodMigoLoading from "./LoadingPage";
 import Chart from "../Components/Chart";
 import axios from "axios";
 import DiaryJournal from "../Components/DailyJournal"
-
+import { v4 as uuidv4 } from "uuid";
+import {Client, Databases, Query} from "appwrite"
 const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const Dashboard: React.FC = () => {
   const setId = useUserState((state) => state.setId);
   const [OpenJournal, setOpenJournal] = useState<Boolean>(false)
   const [Score, setScore] = useState<number[]>([])
-  
+  const [sessions, setSessions] = useState<any>();
   // Dummy Data
   const professionals = [
     {
@@ -36,7 +37,7 @@ const Dashboard: React.FC = () => {
   ];
 
   const getAssessment = async (id: string) => {
-    console.log(id)
+    //console.log(id)
     try {
       const response = await axios.post(`${import.meta.env.VITE_BACKEND_BASE_URL}/questionare/getassessment`, {
         id: id
@@ -50,6 +51,49 @@ const Dashboard: React.FC = () => {
       console.error("Error fetching assessment data:", error);
     }
   }
+  const getSessions = async (id: string) => {
+    //console.log("Fetching sessions for user ID:", id);
+  try {
+    const res = await axios.get(`${import.meta.env.VITE_BACKEND_BASE_URL}/api/bookings/user/${id}`);
+    if (res.data.status === "success") {
+      const sessions = res.data.bookings;
+      //console.log("bookings: ",res.data.bookings)
+      const client = new Client()
+        .setEndpoint("https://fra.cloud.appwrite.io/v1")
+        .setProject(import.meta.env.VITE_MENTORS_PROJECT_ID as string);
+
+      const databases = new Databases(client);
+
+      // Fetch mentor info for all sessions
+      const sessionsWithMentors = await Promise.all(
+        sessions.map(async (session: any) => {
+          const mentorRes = await databases.listDocuments(
+            "6826d3a10039ef4b9444",
+            "6826dd9700303a5efb90",
+            [Query.equal("$id", session.mentorId)]
+          );
+
+          const mentor = mentorRes.documents[0];
+          // console.log("mentor: ",mentor)
+          return {
+            ...session,
+            $id:uuidv4(),
+            MentorName: mentor?.username || "Unknown Mentor",
+            Mentorprofilepic: mentor?.profilephoto || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+          };
+        })
+      );
+
+      setSessions(sessionsWithMentors);
+    }
+    else{
+      console.error("Failed to fetch sessions");
+    }
+  } catch (error) {
+    //console.log("here")
+    console.error("Error fetching sessions:", error);
+  }
+};
 
   // Fetch User Data
   useEffect(() => {
@@ -62,10 +106,11 @@ const Dashboard: React.FC = () => {
         setEmail(userData.email);
         setId(userData.$id);
         getAssessment(userData.$id);
+        getSessions(userData.$id);
         setLoading(false);
         setIsLoggedIn(true);
       } catch (error: any) {
-        console.log(error);
+        //console.log(error);
         setIsLoggedIn(false);
         toast.error("You must be logged in to access the dashboard");
         navigate("/login");
@@ -74,6 +119,9 @@ const Dashboard: React.FC = () => {
     fetchUserData();
   }, []);
 
+useEffect(() => {
+  console.log("Sessions: ",sessions)
+},[sessions,setSessions]);
   if (loading) return <MoodMigoLoading />;
 
   const mascotVariants = {
@@ -231,42 +279,53 @@ const Dashboard: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {professionals.map((session) => (
-                  <div
-                    key={session.$id}
-                    className="flex justify-between items-center bg-indigo-50 p-4 rounded-2xl shadow hover:shadow-lg transition-shadow"
-                  >
-                    <div className="flex items-center gap-4">
-                      <img
-                        src={session.Mentorprofilepic}
-                        className="w-14 h-14 rounded-full object-cover border-2 border-indigo-200"
-                      />
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {session.MentorName}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(session.PreferedDate).toLocaleDateString()} at{" "}
-                          {new Date(session.PreferedDate).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => window.open(session.meetingurl, "_blank")}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl font-semibold text-sm shadow-md"
-                    >
-                      Join
-                    </button>
-                  </div>
-                ))}
+                {sessions && sessions.length > 0 ? (
+  sessions.map((session: any) => (
+    <div
+      key={session.$id}
+      className="flex justify-between items-center bg-indigo-50 p-4 rounded-2xl shadow hover:shadow-lg transition-shadow"
+    >
+      <div className="flex items-center gap-4">
+        <img
+          src={session.Mentorprofilepic || "/dummy-mentor.jpg"}
+          className="w-14 h-14 rounded-full object-cover border-2 border-indigo-200"
+          alt={session.MentorName || "Mentor"}
+        />
+        <div>
+          <p className="font-semibold text-gray-900">
+            {session.MentorName || "Unknown Mentor"}
+          </p>
+          <p className="text-sm text-gray-600">
+            {session.sessionDate
+              ? `${new Date(session.sessionDate).toLocaleDateString()} at ${new Date(
+                  session.sessionDate
+                ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+              : "Date not available"}
+          </p>
+        </div>
+      </div>
+      <button
+        onClick={() => session.sessionUrl && window.open(session.sessionUrl, "_blank")}
+        className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl font-semibold text-sm shadow-md"
+      >
+        Join
+      </button>
+    </div>
+  ))
+) : (
+  <div className="text-center py-8">
+    <p className="text-gray-500 mb-4">No upcoming sessions.</p>
+    <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-full flex items-center justify-center">
+      <Calendar className="w-10 h-10 text-purple-600" />
+    </div>
+  </div>
+)}
+
               </div>
             )}
             <div className="mt-6 text-center">
               <button
-                onClick={() => navigate("/sessions")}
+                onClick={() => navigate("/therapists")}
                 className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-transform hover:scale-105 font-semibold"
               >
                 Request New Session

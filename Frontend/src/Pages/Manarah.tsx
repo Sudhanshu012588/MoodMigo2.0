@@ -72,7 +72,7 @@ function Modal({
   children: React.ReactNode; 
   onClose: () => void; 
   theme: ThemeClasses;
-}) {
+}){
   return (
     <motion.div
       initial={{ opacity: 0 }}

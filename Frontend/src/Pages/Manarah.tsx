@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import type { Components } from 'react-markdown';
 import { Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+// import Signup from "./Signup";
 // Types
 interface Message {
   role: string;
@@ -628,7 +629,7 @@ export default function ChatPage() {
     } catch (error) {
       console.error("Error loading chat history:", error);
       if (!axios.isAxiosError(error) || error.response?.status !== 404) {
-        toast.error("Failed to load chat history");
+        // toast.error("Failed to load chat history");
       }
     } finally {
       setIsLoadingMessages(false);
@@ -639,6 +640,7 @@ export default function ChatPage() {
   const getChats = useCallback(async () => {
     try {
       const user = await account.get();
+      if(!user)return;
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/manarah/getchats`,
         { userId: user.$id }
@@ -669,7 +671,7 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error("Error loading chats:", error);
-      toast.error("Failed to load chats");
+      // toast.error("Failed to load chats");
       setHasInitialLoad(true);
     }
   }, [activeChat, loadChatHistory]);
@@ -722,7 +724,7 @@ export default function ChatPage() {
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/manarah/response`,
         { 
-          userId: user.$id,
+          userId: user?.$id,
           uuid: activeChat,
           message: userMessage 
         }
@@ -774,13 +776,47 @@ export default function ChatPage() {
       toast.error("Please give your chat a name!");
       return;
     }
-
+    console.log("Creating chat with data:", newChatData);
     try {
       const user = await account.get();
+      console.log("here",user)
+      if(!user){
+        const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/manarah/createchat`,
+        {
+          ChatName: newChatData.ChatName,
+          Personality: newChatData.Personality,
+          Mood: newChatData.Mood,
+          Context: newChatData.Context
+        }
+       );
+
+      if (response.data.status === "success") {
+        const newChat: Chat = {
+          _id: response.data.chat._id,
+          uuid: response.data.uuid,
+          ChatName: response.data.chat.ChatName,
+          Personality: response.data.chat.Personality,
+          Mood: response.data.chat.Mood,
+          Context: response.data.chat.Context,
+          createdAt: response.data.chat.createdAt,
+          updatedAt: response.data.chat.updatedAt
+        };
+
+        setChats(prev => [newChat, ...prev]);
+        setActiveChat(newChat.uuid);
+        setMessages([]); // Clear messages for new chat
+        setShowChatForm(false);
+        toast.success("New chat created successfully!");
+      }
+      }
+
+
+      console.log("user id",user?.$id);
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/manarah/createchat`,
         {
-          userId: user.$id,
+          userId: user?.$id,
           ChatName: newChatData.ChatName,
           Personality: newChatData.Personality,
           Mood: newChatData.Mood,
@@ -950,6 +986,30 @@ export default function ChatPage() {
       };
 
       const Navigate = useNavigate();
+      useEffect(()=>{
+        if(!activeChat){
+          setShowChatForm(true);
+        }else{
+          setShowChatForm(false);
+        }
+      },[activeChat])
+      const checkUser = async()=>{
+        console.log("Checking user login status");
+        try{
+          const user = await account.get();
+          if(!user){
+            throw new Error("User not logged in");
+            
+          }
+        }catch(e){
+          console.log("User not logged in, redirecting to signup");
+            Navigate("/signup")
+          console.log("User not logged in",e);
+        }
+      }
+      useEffect(()=>{
+        checkUser();
+      },[])
   return (
     <div className={`flex h-screen ${themeClasses.bg} ${themeClasses.text} transition-colors duration-300`}>
       {/* Modals */}
@@ -1162,8 +1222,8 @@ export default function ChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Share what's on your mind..."
-              disabled={isLoading}
+              placeholder={`${!activeChat?"please create a chat first":"Share what's on your mind..."}`}
+              disabled={isLoading|| !activeChat}
               className={`flex-1 border-none rounded-full px-4 md:px-5 py-3 outline-none ${themeClasses.input} shadow-inner text-sm md:text-base`}
             />
             <motion.button
@@ -1171,11 +1231,11 @@ export default function ChatPage() {
               whileTap={{ scale: 0.95 }}
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
-              className={`rounded-full p-3 shadow-md flex-shrink-0 ${
-                isLoading || !input.trim() 
-                  ? 'bg-purple-200 cursor-pointer' 
-                  : themeClasses.button
-              }`}
+              className={`rounded-full p-3 shadow-md flex-shrink-0 transition-all ${
+          !activeChat
+            ? "bg-purple-200 cursor-not-allowed opacity-60"
+            : themeClasses.button
+        }`}
             >
               <Send size={18} />
             </motion.button>

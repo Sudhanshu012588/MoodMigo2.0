@@ -4,8 +4,10 @@ import Navbar from "../Components/Navbar";
 import { OAuthProvider,ID } from "appwrite";
 import { account } from "../Appwrite/config";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 export default function Signup() {
+  
   const navigate = useNavigate();
   const [user, setUser] = useState({
     name: "",
@@ -48,9 +50,22 @@ export default function Signup() {
 };
 
 
+const location = useLocation();
+
   const handleGoogleSignIn = () => {
-    const successUrl = `${window.location.origin}/dashboard`;
+    // Safely extract "from" pathname if it exists
+    const from =
+      (location.state as { from?: { pathname?: string } })?.from?.pathname ||
+      location.pathname;
+    console.log("OAuth redirect from:", from);
+    // Decide redirect target based on "from"
+    const successUrl =
+      from === "/signup"
+        ? `${window.location.origin}/manarah/chat`
+        : `${window.location.origin}/dashboard`;
+
     const failureUrl = `${window.location.origin}/signup`;
+
     account.createOAuth2Session(OAuthProvider.Google, successUrl, failureUrl);
   };
 

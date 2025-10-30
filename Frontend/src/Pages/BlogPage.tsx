@@ -76,6 +76,20 @@ const BlogPage = () => {
     setTotalPages(res.data.totalPages);
   } catch (err) {
     console.error("Error fetching blogs:", err);
+     const res = await axios.get(
+      `${import.meta.env.VITE_BACKEND_BASE_URL}/blogs/fetchBlog?page=${pageNum}&limit=6`
+    );
+
+
+    console.log("Response:", res.data);
+
+    setBlogs(res.data.blogs);
+    setFilteredBlogs(res.data.blogs);
+
+    // ✅ Use topContributors from the correct response
+    setTopContributors(res.data.topContributors);
+
+    setTotalPages(res.data.totalPages);
   } finally {
     setIsLoading(false);
   }

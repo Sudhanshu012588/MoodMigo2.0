@@ -5,6 +5,7 @@ import { BookOpen, Smile, Heart, AlertTriangle, CheckCircle, Zap } from "lucide-
 import Navbar from "../Components/Navbar";
 import axios from "axios";
 import { account } from "../Appwrite/config";
+import { useNavigate } from "react-router-dom";
 interface FormState {
   [key: string]: string | string[];
   Full_Name: string;
@@ -179,7 +180,7 @@ const Questionnaire: React.FC = () => {
     console.error("Error submitting form data:", error);
   }
 };
-
+  const navigate = useNavigate()
 
   const handleSubmit = async(e: FormEvent) => {
     e.preventDefault();
@@ -209,13 +210,16 @@ const Questionnaire: React.FC = () => {
       cleanedForm.safetyDetails = "";
     }
 
-    console.log("Final Form Data Submitted:", cleanedForm);
-    const user = await account.get();
-    const id = user.$id;
-    console.log("id",id)
-    submitFormData(id,cleanedForm);
-
-    
+    try {
+  const user = await account.get();
+  const id = user.$id;
+  await submitFormData(id, cleanedForm);
+  navigate("/therapists");
+} catch (err) {
+  console.error("User not logged in:", err);
+  await submitFormData("guest", cleanedForm);
+  navigate("/signup");
+}
     // Simple interpretation logic
     let severity = 0;
     const symptomKeys = [
@@ -241,6 +245,8 @@ const Questionnaire: React.FC = () => {
     symptomKeys.forEach(key => {
       severity += scoreMap[form[key] as string] || 0;
     });
+
+
 
     let result = "Thank you for completing the assessment. Your responses indicate a need for further discussion regarding your well-being.";
 

@@ -7,7 +7,7 @@ export const getRes = async (req, res) => {
   try {
     const { userId, uuid, message} = req.body;
 
-    console.log("Got this payload->",userId,",",uuid,",", message)
+    //console.log("Got this payload->",userId,",",uuid,",", message)
     // Validate required fields
     if (!message) {
       return res.status(400).json({
@@ -22,10 +22,10 @@ export const getRes = async (req, res) => {
       threadId = uuid; // Use existing valid UUID
     } else {
       threadId = uuidv4(); // Generate new UUID
-      console.log(`🆕 Generated new UUID: ${threadId}`);
+      // //console.log(`🆕 Generated new UUID: ${threadId}`);
     }
     const Currentchat = await chat.findOne({uuid:uuid})
-    console.log("Currentchat",Currentchat)
+    //console.log("Currentchat",Currentchat)
     // ✅ Load existing history from DB/cache
     const history = await getChatHistory(threadId);
 
@@ -63,7 +63,28 @@ export const getManarahAgent = async(req,res)=>{
   try{
     const {userId,ChatName,Personality,Mood,Context }=req.body;
     if(!userId){
-      throw new Error("provide userId");
+      const uuid = uuidv4();
+    const newChat = await chat.create({
+      userId:"Trial Survey",
+      uuid:uuid,
+      ChatName:ChatName,
+      Personality:Personality,
+      Mood:Mood,
+      Context:Context
+    })
+    await newChat.save();
+    console.log("NEW chat: ",newChat)
+    if(newChat){
+      return res.status(200).json({
+        status:"success",
+        message:"Created new chat",
+        uuid,
+        chat:newChat
+      })
+    }
+    else{
+      throw new Error("Can't create mongodb instance for new chat")
+    }
     }
     const uuid = uuidv4();
     const newChat = await chat.create({
@@ -162,7 +183,7 @@ export const clearHistory = async(req,res)=>{
         message:"Please provide all the fields"
       })
     }
-    console.log(userId,uuid)
+    //console.log(userId,uuid)
       const targetChat = await ChatHistory.updateOne(
         {uuid:uuid},
         { $set: { encryptedHistory: " " } }

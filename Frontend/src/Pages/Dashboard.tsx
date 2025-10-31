@@ -70,7 +70,7 @@ const Dashboard: React.FC = () => {
           const mentorRes = await databases.listDocuments(
             "6826d3a10039ef4b9444",
             "6826dd9700303a5efb90",
-            [Query.equal("$id", session.mentorId)]
+            [Query.equal("id", session.mentorId)]
           );
 
           const mentor = mentorRes.documents[0];

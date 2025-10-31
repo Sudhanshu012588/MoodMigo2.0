@@ -10,9 +10,8 @@ const bookingSchema = new mongoose.Schema({
   notes: { type: String },
   status: {
     type: String,
-    enum: ["booked", "completed", "cancelled"],
+    enum: ["booked", "completed","Pending", "cancelled"],
     default: "booked",
   },
 });
-
 export default mongoose.model("Booking", bookingSchema);

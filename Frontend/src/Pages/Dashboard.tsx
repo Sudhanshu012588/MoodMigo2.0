@@ -280,38 +280,41 @@ useEffect(() => {
             ) : (
               <div className="space-y-4">
                 {sessions && sessions.length > 0 ? (
-  sessions.map((session: any) => (
-    <div
-      key={session.$id}
-      className="flex justify-between items-center bg-indigo-50 p-4 rounded-2xl shadow hover:shadow-lg transition-shadow"
-    >
-      <div className="flex items-center gap-4">
-        <img
-          src={session.Mentorprofilepic || "/dummy-mentor.jpg"}
-          className="w-14 h-14 rounded-full object-cover border-2 border-indigo-200"
-          alt={session.MentorName || "Mentor"}
-        />
-        <div>
-          <p className="font-semibold text-gray-900">
-            {session.MentorName || "Unknown Mentor"}
-          </p>
-          <p className="text-sm text-gray-600">
-            {session.sessionDate
-              ? `${new Date(session.sessionDate).toLocaleDateString()} at ${new Date(
-                  session.sessionDate
-                ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-              : "Date not available"}
-          </p>
-        </div>
-      </div>
-      <button
-        onClick={() => session.sessionUrl && window.open(session.sessionUrl, "_blank")}
-        className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl font-semibold text-sm shadow-md"
+  sessions
+    .filter((session: any) => session.status === "booked") // ✅ filter booked sessions only
+    .map((session: any) => (
+      <div
+        key={session._id}
+        className="flex justify-between items-center bg-indigo-50 p-4 rounded-2xl shadow hover:shadow-lg transition-shadow"
       >
-        Join
-      </button>
-    </div>
-  ))
+        <div className="flex items-center gap-4">
+          <img
+            src={session.Mentorprofilepic || "/dummy-mentor.jpg"}
+            className="w-14 h-14 rounded-full object-cover border-2 border-indigo-200"
+            alt={session.MentorName || "Mentor"}
+          />
+          <div>
+            <p className="font-semibold text-gray-900">
+              {session.MentorName || "Unknown Mentor"}
+            </p>
+            <p className="text-sm text-gray-600">
+              {session.sessionDate
+                ? `${new Date(session.sessionDate).toLocaleDateString()} at ${new Date(
+                    session.sessionDate
+                  ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                : "Date not available"}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => session.sessionUrl && window.open(session.sessionUrl, "_blank")}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl font-semibold text-sm shadow-md"
+        >
+          Join
+        </button>
+      </div>
+    ))
 ) : (
   <div className="text-center py-8">
     <p className="text-gray-500 mb-4">No upcoming sessions.</p>
@@ -320,6 +323,7 @@ useEffect(() => {
     </div>
   </div>
 )}
+
 
               </div>
             )}

@@ -1,662 +1,538 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { Query, ID } from 'appwrite';
-import { databases, account } from '../Appwrite/MentorsConfig';
+import { Query } from "appwrite";
+import { databases, account } from "../Appwrite/MentorsConfig";
 import MoodMigoLoading from "../Pages/LoadingPage";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { 
-  User, 
-  Mail, 
-  Shield, 
-  Sparkles, 
+import {
+  User,
+  Mail,
+  Shield,
+  Sparkles,
   Brain,
   Heart,
   Clock,
-  Award,
-  Edit,
   Camera,
-  X
+  X,
+  Edit, // ✅ Add this line
 } from "lucide-react";
+import {Client,Account} from "appwrite";
 import Navbar from "./MentorsNavbar";
-import axios from 'axios';
-import WriteBlog from "./MentorsWriteBlog"
+import axios from "axios";
+import WriteBlog from "./MentorsWriteBlog";
+
 function MentorsDashboard() {
-    const { mentorId } = useParams();
-    const [user, setUser] = useState<{
-        $id: string;
-        email: string;
-        name?: string;
-        profilepicture?: string;
-        isLoggedIn: boolean;
-        createdAt?: string;
-        phone?: string;
-        bio?: string;
-        specialization?: string;
-    }>({ 
-        $id: '', 
-        email: '', 
-        isLoggedIn: false,
-        name: '',
-        bio: '',
-        specialization: 'Mental Wellness'
-    });
-    const [isLoading, setLoading] = useState(true);
-    const [isUploading, setIsUploading] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editForm, setEditForm] = useState({
-        bio: '',
-        specialization: ''
-    });
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const navigator = useNavigate();
-    const [WritingBlog,setWritingBlog]=useState<Boolean>(false)
+  const { mentorId } = useParams();
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // --- STATES ---
+  const [user, setUser] = useState<any>({
+    $id: "",
+    email: "",
+    name: "",
+    profilepicture: "",
+    isLoggedIn: false,
+    createdAt: "",
+    phone: "",
+    bio: "",
+    specialization: "Mental Wellness",
+  });
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [writingBlog, setWritingBlog] = useState(false);
+  const [todaysSessions, setTodaysSessions] = useState<any[]>([]);
+  const [editForm, setEditForm] = useState({
+    bio: "",
+    specialization: "",
+  });
+
     useEffect(() => {
-        const loadDashboard = async () => {
-            try {
-                if(!mentorId){
-                    setLoading(false);
-                    navigator('/mentorspage')
-                    return;
-                }
-                
-                // Get current user from account
-                const currentUser = await account.get();
-                //console.log("Current User:", currentUser);
+    const client = new Client()
+      .setEndpoint("https://fra.cloud.appwrite.io/v1")
+      .setProject("6826c7d8002c4477cb81");
 
-                // Get profile data from database
-                const profAttrs = await databases.listDocuments(
-                    "6826d3a10039ef4b9444", 
-                    "6826dd9700303a5efb90", 
-                    [Query.equal("id", mentorId)]
-                );
-                
-                //console.log("Profile Attributes:", profAttrs);
+    const account = new Account(client);
 
-                const document = profAttrs.documents[0];
-                //console.log("Document:", document);
+    const getAccount = async () => {
+      try {
+        const mentor = await account.get();
+        console.log("✅ Logged in as:", mentor);
+        // You can store mentor data in state here if needed
+      } catch (e) {
+        console.warn("❌ Not logged in, redirecting...");
+        navigate("/");
+      }
+    };
 
-                // Map the data correctly based on your console log structure
-                const userData = {
-                    $id: currentUser.$id,
-                    email: currentUser.email,
-                    name: currentUser.name || 'Mentor',
-                    profilepicture: document?.profilephoto || '',
-                    isLoggedIn: true,
-                    createdAt: currentUser.$createdAt,
-                    phone: document?.phone || '',
-                    bio: document?.bio || 'Dedicated to helping others achieve mental wellness and personal growth.',
-                    specialization: document?.specialties || 'Mental Wellness'
-                };
+    getAccount();
+  }, [navigate]);
+  // --- HELPERS ---
+  const formatToLocalTime = (utcString: string) => {
+    const date = new Date(utcString);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
 
-                //console.log("Final User Data:", userData);
-                setUser(userData);
-                setEditForm({
-                    bio: userData.bio,
-                    specialization: userData.specialization
-                });
+  const isToday = (utcString: string) => {
+    const sessionDate = new Date(utcString);
+    const today = new Date();
+    return (
+      sessionDate.getDate() === today.getDate() &&
+      sessionDate.getMonth() === today.getMonth() &&
+      sessionDate.getFullYear() === today.getFullYear()
+    );
+  };
 
-            } catch (error) {
-                console.error("Error loading dashboard:", error);
-            } finally {
-                setLoading(false);
-            }
+  // --- LOAD DASHBOARD DATA ---
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        if (!mentorId) {
+          navigate("/mentorspage");
+          return;
+        }
+
+        const currentUser = await account.get();
+        const profAttrs = await databases.listDocuments(
+          "6826d3a10039ef4b9444",
+          "6826dd9700303a5efb90",
+          [Query.equal("id", mentorId)]
+        );
+
+        const document = profAttrs.documents[0];
+        const userData = {
+          $id: currentUser.$id,
+          email: currentUser.email,
+          name: currentUser.name || "Mentor",
+          profilepicture: document?.profilephoto || "",
+          isLoggedIn: true,
+          createdAt: currentUser.$createdAt,
+          phone: document?.phone || "",
+          bio:
+            document?.bio ||
+            "Dedicated to helping others achieve mental wellness and personal growth.",
+          specialization: document?.specialties || "Mental Wellness",
         };
 
-        loadDashboard();
-    }, [mentorId, navigator]);
-
-    useEffect(() => {
-        //console.log("User state updated:", user);
-    }, [user]);
-
-    // Profile Picture Upload Function with Cloudinary
-    const handleProfilePictureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file || !mentorId) return;
-
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-            alert('Please select an image file');
-            return;
-        }
-
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            alert('Please select an image smaller than 5MB');
-            return;
-        }
-
-        setIsUploading(true);
-
-        try {
-            // Upload to Cloudinary
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("upload_preset", "moodmigo_upload");
-
-            const cloudinaryResponse = await axios.post(
-                `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUDNAME}/upload`,
-                formData
-            );
-
-            const cloudinaryUrl = cloudinaryResponse.data.secure_url;
-            //console.log("Cloudinary Upload Response:", cloudinaryResponse.data);
-            //console.log("Cloudinary URL:", cloudinaryUrl);
-
-            // Find the document to update in Appwrite
-            const profAttrs = await databases.listDocuments(
-                "6826d3a10039ef4b9444", 
-                "6826dd9700303a5efb90", 
-                [Query.equal("id", mentorId)]
-            );
-
-            const document = profAttrs.documents[0];
-            //console.log("Document to update:", document);
-
-            if (document) {
-                // Update existing document with Cloudinary URL
-                await databases.updateDocument(
-                    "6826d3a10039ef4b9444",
-                    "6826dd9700303a5efb90",
-                    document.$id,
-                    {
-                        profilephoto: cloudinaryUrl
-                    }
-                );
-                //console.log("Updated document in Appwrite:", updatedDoc);
-            } else {
-                // Create new document if it doesn't exist
-                await databases.createDocument(
-                    "6826d3a10039ef4b9444",
-                    "6826dd9700303a5efb90",
-                    ID.unique(),
-                    {
-                        id: mentorId,
-                        name: user.name,
-                        email: user.email,
-                        bio: user.bio,
-                        specialization: user.specialization,
-                        profilephoto: cloudinaryUrl
-                    }
-                );
-                //console.log("Created new document in Appwrite:", newDoc);
-            }
-
-            // Update local state with the new Cloudinary URL
-            setUser(prev => ({
-                ...prev,
-                profilepicture: cloudinaryUrl
-            }));
-
-            //console.log("Profile picture updated successfully with Cloudinary");
-
-        } catch (error: any) {
-            console.error("Error uploading profile picture:", error);
-            if (error.response) {
-                console.error("Cloudinary error response:", error.response.data);
-            }
-            alert('Error uploading profile picture. Please try again.');
-        } finally {
-            setIsUploading(false);
-            // Reset file input
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
-        }
-    };
-
-    // Edit Profile Functions
-    const handleEditClick = () => {
+        setUser(userData);
         setEditForm({
-            bio: user.bio || '',
-            specialization: user.specialization || ''
+          bio: userData.bio,
+          specialization: userData.specialization,
         });
-        setShowEditModal(true);
+      } catch (error) {
+        console.error("Error loading dashboard:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    const handleEditSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        try {
-            // Find the document to update
-            const profAttrs = await databases.listDocuments(
-                "6826d3a10039ef4b9444", 
-                "6826dd9700303a5efb90", 
-                [Query.equal("id", mentorId?mentorId:'')]
-            );
+    loadDashboard();
+  }, [mentorId, navigate]);
 
-            const document = profAttrs.documents[0];
-            
-            if (document) {
-                // Update existing document
-                await databases.updateDocument(
-                    "6826d3a10039ef4b9444",
-                    "6826dd9700303a5efb90",
-                    document.$id,
-                    {
-                        bio: editForm.bio,
-                        specialties: editForm.specialization
-                    }
-                );
-            } else {
-                // Create new document if it doesn't exist
-                await databases.createDocument(
-                    "6826d3a10039ef4b9444",
-                    "6826dd9700303a5efb90",
-                    ID.unique(),
-                    {
-                        id: mentorId,
-                        name: user.name,
-                        email: user.email,
-                        bio: editForm.bio,
-                        specialization: editForm.specialization,
-                        profilephoto: user.profilepicture || ''
-                    }
-                );
-            }
+  // --- FETCH TODAY'S SESSIONS ---
+  const getSessionsForToday = async () => {
+    if (!mentorId) return;
 
-            //console.log("Profile updated in database:", updatedDoc);
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/bookings/mentor/${mentorId}`
+      );
 
-            // Update local state
-            setUser(prev => ({
-                ...prev,
-                bio: editForm.bio,
-                specialization: editForm.specialization
-            }));
+      if (response?.data?.bookings?.length) {
+        const todays = response.data.bookings
+          .filter((s: any) => isToday(s.sessionDate))
+          .map((s: any) => ({
+            ...s,
+            localTime: formatToLocalTime(s.sessionDate),
+          }));
+        setTodaysSessions(todays);
+      } else {
+        setTodaysSessions([]);
+      }
+    } catch (e: any) {
+      console.error("Error fetching sessions:", e.message);
+    }
+  };
 
-            // Log the updated data
-            // //console.log('Profile updated:', {
-            //     bio: editForm.bio,
-            //     specialization: editForm.specialization
-            // });
+  useEffect(() => {
+    if (mentorId) getSessionsForToday();
+  }, [mentorId]);
 
-            setShowEditModal(false);
-        } catch (error) {
-            console.error("Error updating profile:", error);
-            alert('Error updating profile. Please try again.');
-        }
-    };
+  // --- HANDLE PROFILE PICTURE UPLOAD ---
+  const handleProfilePictureUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !mentorId) return;
 
-    const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setEditForm(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    if (isLoading) {
-        return <MoodMigoLoading />;
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file");
+      return;
     }
 
-    // Animation variants
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1
-            }
-        }
-    };
-
-    const itemVariants = {
-        hidden: { y: 20, opacity: 0 },
-        visible: {
-            y: 0,
-            opacity: 1,
-            transition: {
-                type: "spring" as const,
-                stiffness: 100
-            }
-        }
-    };
-
-    const cardVariants = {
-        hidden: { scale: 0.9, opacity: 0 },
-        visible: {
-            scale: 1,
-            opacity: 1,
-            transition: {
-                type: "spring" as const,
-                stiffness: 100
-            }
-        }
-    };
-
-    const profilePictureVariants = {
-        hidden: { scale: 0 },
-        visible: {
-            scale: 1,
-            transition: {
-                type: "spring" as const,
-                stiffness: 100,
-                delay: 0.2
-            }
-        }
-    };
-
-    if(WritingBlog){
-        return(
-            <>
-
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-                >
-                <WriteBlog onClose={() => setWritingBlog(false)} byMentors={true}/>
-            </div>
-            </>
-        )
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Please select an image smaller than 5MB");
+      return;
     }
 
-    return (
-        <>
-            <Navbar/>
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4 pt-20 pb-20">
-                <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={containerVariants}
-                    className="max-w-6xl mx-auto"
-                >
-                    {/* Header */}
-                    <motion.div variants={itemVariants} className="text-center mb-12">
-                        <motion.div
-                            variants={profilePictureVariants}
-                            className="relative w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center border-4 border-white shadow-lg cursor-pointer group"
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            {isUploading ? (
-                                <div className="w-full h-full rounded-full bg-blue-100 flex items-center justify-center">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                                </div>
-                            ) : user.profilepicture ? (
-                                <>
-                                    <img 
-                                        src={user.profilepicture} 
-                                        alt={user.name}
-                                        className="w-full h-full rounded-full object-cover"
-                                        onError={(e) => {
-                                            // If image fails to load, fallback to icon
-                                            console.error("Image failed to load:", user.profilepicture);
-                                            e.currentTarget.style.display = 'none';
-                                        }}
-                                    />
-                                    <div className="absolute inset-0 bg-black bg-opacity-40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Camera className="w-6 h-6 text-white" />
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="relative">
-                                    <User className="w-10 h-10 text-blue-600" />
-                                    <div className="absolute -bottom-1 -right-1 bg-blue-600 rounded-full p-1">
-                                        <Camera className="w-3 h-3 text-white" />
-                                    </div>
-                                </div>
-                            )}
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                onChange={handleProfilePictureUpload}
-                                className="hidden"
-                            />
-                        </motion.div>
-                        <motion.h1 
-                            variants={itemVariants}
-                            className="text-4xl font-bold text-gray-800 mb-3"
-                        >
-                            Welcome, {user.name}
-                        </motion.h1>
-                        <motion.p 
-                            variants={itemVariants}
-                            className="text-xl text-blue-600 font-medium flex items-center justify-center gap-2"
-                        >
-                            <Sparkles className="w-5 h-5" />
-                            {user.specialization || 'Mental Wellness Mentor'}
-                            <Sparkles className="w-5 h-5" />
-                        </motion.p>
-<button 
-onClick={()=>{setWritingBlog(!WritingBlog)}}
-className="px-6 py-3 text-white font-semibold rounded-full bg-gradient-to-r from-purple-600 to-blue-700 hover:from-purple-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-  Create Blog
-</button>    
-<button onClick={()=>navigator(`/mentordashboard/BlogPage`)}
-    className="px-6 py-3 ml-2 text-white font-semibold rounded-full bg-gradient-to-r from-purple-600 to-blue-700 hover:from-purple-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-    View Blogs
-</button>
-                </motion.div>
+    setIsUploading(true);
 
-                    {/* Main Content Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Profile Information Card */}
-                        <motion.div
-                            variants={cardVariants}
-                            className="lg:col-span-2 space-y-6"
-                        >
-                            <motion.div
-                                variants={itemVariants}
-                                className="bg-white rounded-2xl p-8 shadow-sm border border-blue-100 relative"
-                            >
-                                <button
-                                    onClick={handleEditClick}
-                                    className="absolute top-6 right-6 p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                                    title="Edit Profile"
-                                >
-                                    <Edit className="w-5 h-5" />
-                                </button>
-                                
-                                <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-3">
-                                    <User className="w-6 h-6 text-blue-600" />
-                                    Profile Information
-                                </h2>
-                                
-                                <div className="space-y-6">
-                                    <motion.div 
-                                        variants={itemVariants}
-                                        className="flex items-center gap-4 p-4 bg-blue-50 rounded-xl"
-                                    >
-                                        <Mail className="w-5 h-5 text-blue-600" />
-                                        <div>
-                                            <p className="text-sm text-gray-600">Email Address</p>
-                                            <p className="text-gray-800 font-medium">{user.email}</p>
-                                        </div>
-                                    </motion.div>
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "moodmigo_upload");
 
-                                    <motion.div 
-                                        variants={itemVariants}
-                                        className="flex items-center gap-4 p-4 bg-purple-50 rounded-xl"
-                                    >
-                                        <Shield className="w-5 h-5 text-purple-600" />
-                                        <div>
-                                            <p className="text-sm text-gray-600">User ID</p>
-                                            <p className="text-gray-800 font-mono font-medium text-sm">{user.$id}</p>
-                                        </div>
-                                    </motion.div>
+      const cloudinaryResponse = await axios.post(
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUDNAME}/upload`,
+        formData
+      );
 
-                                    <motion.div 
-                                        variants={itemVariants}
-                                        className="flex items-center gap-4 p-4 bg-green-50 rounded-xl"
-                                    >
-                                        <Brain className="w-5 h-5 text-green-600" />
-                                        <div>
-                                            <p className="text-sm text-gray-600">Specialization</p>
-                                            <p className="text-gray-800 font-medium">{user.specialization || 'Not specified'}</p>
-                                        </div>
-                                    </motion.div>
-                                </div>
-                            </motion.div>
+      const cloudinaryUrl = cloudinaryResponse.data.secure_url;
 
-                            {/* Bio Section */}
-                            <motion.div
-                                variants={itemVariants}
-                                className="bg-white rounded-2xl p-8 shadow-sm border border-green-100"
-                            >
-                                <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-3">
-                                    <Heart className="w-5 h-5 text-green-600" />
-                                    About Me
-                                </h3>
-                                <p className="text-gray-600 leading-relaxed text-lg">
-                                    {user.bio || 'No bio provided yet. Click the edit button to add your bio.'}
-                                </p>
-                            </motion.div>
-                        </motion.div>
+      const profAttrs = await databases.listDocuments(
+        "6826d3a10039ef4b9444",
+        "6826dd9700303a5efb90",
+        [Query.equal("id", mentorId)]
+      );
 
-                        {/* Stats & Quick Actions */}
-                        <motion.div
-                            variants={cardVariants}
-                            className="space-y-6"
-                        >
-                            {/* Status Card */}
-                            <motion.div
-                                variants={itemVariants}
-                                className="bg-white rounded-2xl p-6 shadow-sm border border-emerald-100"
-                            >
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
-                                    <span className="text-emerald-600 font-medium">Online & Active</span>
-                                </div>
-                                <p className="text-gray-600">Your profile is live and accessible to clients seeking guidance.</p>
-                            </motion.div>
+      const document = profAttrs.documents[0];
+      if (document) {
+        await databases.updateDocument(
+          "6826d3a10039ef4b9444",
+          "6826dd9700303a5efb90",
+          document.$id,
+          { profilephoto: cloudinaryUrl }
+        );
+      }
 
-                            {/* Quick Stats */}
-                            <motion.div
-                                variants={itemVariants}
-                                className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-6 text-white"
-                            >
-                                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                    <Award className="w-5 h-5" />
-                                    This Month
-                                </h3>
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <span>Sessions Completed</span>
-                                        <span className="font-bold text-xl">24</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span>New Clients</span>
-                                        <span className="font-bold text-xl">8</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span>Availability</span>
-                                        <span className="font-bold text-xl">85%</span>
-                                    </div>
-                                </div>
-                            </motion.div>
+      setUser((prev:any) => ({ ...prev, profilepicture: cloudinaryUrl }));
+    } catch (error) {
+      console.error("Error uploading profile picture:", error);
+      alert("Error uploading profile picture. Please try again.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
-                            {/* Upcoming Sessions */}
-                            <motion.div
-                                variants={itemVariants}
-                                className="bg-white rounded-2xl p-6 shadow-sm border border-orange-100"
-                            >
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                    <Clock className="w-5 h-5 text-orange-600" />
-                                    Today's Sessions
-                                </h3>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                                        <span className="text-gray-700">10:00 AM</span>
-                                        <span className="text-orange-600 font-medium">Sarah M.</span>
-                                    </div>
-                                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                                        <span className="text-gray-700">2:30 PM</span>
-                                        <span className="text-blue-600 font-medium">James L.</span>
-                                    </div>
-                                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                                        <span className="text-gray-700">4:00 PM</span>
-                                        <span className="text-green-600 font-medium">Emma K.</span>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </motion.div>
-                    </div>
+  // --- HANDLE PROFILE EDIT ---
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-                    {/* Wellness Message */}
-                    <motion.div
-                        variants={itemVariants}
-                        className="mt-12 text-center"
-                    >
-                        <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl p-8 max-w-2xl mx-auto">
-                            <Brain className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-                            <h3 className="text-2xl font-semibold text-gray-800 mb-3">
-                                Your Guidance Matters
-                            </h3>
-                            <p className="text-gray-600 text-lg">
-                                Every session you conduct brings someone closer to mental wellness and peace. 
-                                Thank you for being a beacon of hope and support.
-                            </p>
-                        </div>
-                    </motion.div>
-                </motion.div>
-            </div>
+    try {
+      const profAttrs = await databases.listDocuments(
+        "6826d3a10039ef4b9444",
+        "6826dd9700303a5efb90",
+        [Query.equal("id", mentorId || "")]
+      );
 
-            {/* Edit Profile Modal */}
-            {showEditModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white rounded-2xl p-8 max-w-md w-full"
-                    >
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-2xl font-semibold text-gray-800">Edit Profile</h3>
-                            <button
-                                onClick={() => setShowEditModal(false)}
-                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        
-                        <form onSubmit={handleEditSubmit} className="space-y-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Specialization
-                                </label>
-                                <input
-                                    type="text"
-                                    name="specialization"
-                                    value={editForm.specialization}
-                                    onChange={handleEditChange}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                    placeholder="Enter your specialization"
-                                />
-                            </div>
-                            
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Bio
-                                </label>
-                                <textarea
-                                    name="bio"
-                                    value={editForm.bio}
-                                    onChange={handleEditChange}
-                                    rows={4}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-                                    placeholder="Tell us about yourself..."
-                                />
-                            </div>
-                            
-                            <div className="flex gap-4 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowEditModal(false)}
-                                    className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
-                                >
-                                    Save Changes
-                                </button>
-                            </div>
-                        </form>
-                    </motion.div>
+      const document = profAttrs.documents[0];
+
+      if (document) {
+        await databases.updateDocument(
+          "6826d3a10039ef4b9444",
+          "6826dd9700303a5efb90",
+          document.$id,
+          {
+            bio: editForm.bio,
+            specialties: editForm.specialization,
+          }
+        );
+      }
+
+      setUser((prev:any) => ({
+        ...prev,
+        bio: editForm.bio,
+        specialization: editForm.specialization,
+      }));
+
+      setShowEditModal(false);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      alert("Error updating profile. Please try again.");
+    }
+  };
+
+  if (isLoading) return <MoodMigoLoading />;
+
+  // --- ANIMATION VARIANTS ---
+//   const itemVariants = {
+//     hidden: { y: 20, opacity: 0 },
+//     visible: {
+//       y: 0,
+//       opacity: 1,
+//       transition: { type: "spring", stiffness: 100 },
+//     },
+//   };
+
+  return (
+    <>
+      <Navbar />
+    <div className="mb-10 mt-10">
+      {/* BLOG MODAL */}
+      {writingBlog && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <WriteBlog onClose={() => setWritingBlog(false)} byMentors />
+        </div>
+      )}
+
+      {/* MAIN DASHBOARD */}
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-10 pt-24">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+          className="max-w-6xl mx-auto"
+        >
+          {/* HEADER */}
+          <motion.div  className="text-center mb-12">
+            <div
+              className="relative w-24 h-24 mx-auto mb-6 rounded-full overflow-hidden border-4 border-white shadow-lg cursor-pointer group"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {isUploading ? (
+                <div className="w-full h-full flex items-center justify-center bg-blue-100">
+                  <div className="animate-spin h-8 w-8 border-b-2 border-blue-600 rounded-full"></div>
                 </div>
-            )}
-        </>
-    );
+              ) : user.profilepicture ? (
+                <>
+                  <img
+                    src={user.profilepicture}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                    <Camera className="w-6 h-6 text-white" />
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center bg-blue-50">
+                  <User className="w-10 h-10 text-blue-600" />
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleProfilePictureUpload}
+                className="hidden"
+              />
+            </div>
+
+            <h1 className="text-4xl font-bold text-gray-800 mb-3">
+              Welcome, {user.name}
+            </h1>
+            <p className="text-xl text-blue-600 font-medium flex items-center justify-center gap-2">
+              <Sparkles className="w-5 h-5" />
+              {user.specialization}
+              <Sparkles className="w-5 h-5" />
+            </p>
+
+            <div className="mt-4 flex justify-center gap-3">
+              <button
+                onClick={() => setWritingBlog(true)}
+                className="px-6 py-3 text-white rounded-full bg-gradient-to-r from-purple-600 to-blue-700 hover:shadow-lg transition"
+              >
+                Create Blog
+              </button>
+              <button
+                onClick={() => navigate(`/mentordashboard/BlogPage`)}
+                className="px-6 py-3 text-white rounded-full bg-gradient-to-r from-purple-600 to-blue-700 hover:shadow-lg transition"
+              >
+                View Blogs
+              </button>
+            </div>
+          </motion.div>
+
+          {/* MAIN GRID */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* LEFT: PROFILE INFO */}
+            <motion.div
+            //   variants={itemVariants}
+              className="lg:col-span-2 space-y-6"
+            >
+              {/* Profile Information */}
+              <div className="bg-white rounded-2xl p-8 shadow-sm border relative">
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="absolute top-6 right-6 text-gray-400 hover:text-blue-600"
+                >
+                  <Edit className="w-5 h-5" />
+                </button>
+
+                <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-3">
+                  <User className="w-6 h-6 text-blue-600" /> Profile Information
+                </h2>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 bg-blue-50 p-4 rounded-xl">
+                    <Mail className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <p className="text-sm text-gray-600">Email Address</p>
+                      <p className="font-medium">{user.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 bg-purple-50 p-4 rounded-xl">
+                    <Shield className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <p className="text-sm text-gray-600">User ID</p>
+                      <p className="font-mono text-sm">{user.$id}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 bg-green-50 p-4 rounded-xl">
+                    <Brain className="w-5 h-5 text-green-600" />
+                    <div>
+                      <p className="text-sm text-gray-600">Specialization</p>
+                      <p className="font-medium">
+                        {user.specialization || "Not specified"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bio Section */}
+              <div className="bg-white rounded-2xl p-8 shadow-sm border">
+                <h3 className="text-xl font-semibold mb-4 flex items-center gap-3">
+                  <Heart className="w-5 h-5 text-green-600" /> About Me
+                </h3>
+                <p className="text-gray-600 leading-relaxed text-lg">
+                  {user.bio ||
+                    "No bio provided yet. Click the edit button to add your bio."}
+                </p>
+              </div>
+            </motion.div>
+
+            {/* RIGHT: QUICK STATS & SESSIONS */}
+            <motion.div className="space-y-6">
+              {/* Status */}
+              <div className="bg-white rounded-2xl p-6 border">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                  <span className="text-emerald-600 font-medium">
+                    Online & Active
+                  </span>
+                </div>
+                <p className="text-gray-600">
+                  Your profile is live and visible to clients.
+                </p>
+              </div>
+
+              {/* Today's Sessions */}
+              <div className="bg-white rounded-2xl p-6 border border-orange-100">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-orange-600" />
+                  Today's Sessions
+                </h3>
+                {todaysSessions.length > 0 ? (
+                  <div className="space-y-3">
+                    {todaysSessions.map((session, i) => (
+                      <div
+                        key={session._id || i}
+                        className="flex justify-between items-center p-3 rounded-lg bg-orange-50 hover:bg-orange-100 transition"
+                      >
+                        <span className="text-gray-700">
+                          {session.localTime}
+                        </span>
+                        <span className="text-blue-700 font-medium">
+                          {session.userName}
+                        </span>
+                        <button className="m-3 bg-blue rounded-2xl" onClick={()=>{
+                            window.open(session.sessionUrl)
+                        }}>Join</button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">
+                    No sessions scheduled for today.
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* EDIT PROFILE MODAL */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl p-8 max-w-md w-full"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-semibold">Edit Profile</h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Specialization
+                </label>
+                <input
+                  type="text"
+                  name="specialization"
+                  value={editForm.specialization}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      specialization: e.target.value,
+                    }))
+                  }
+                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Bio</label>
+                <textarea
+                  name="bio"
+                  value={editForm.bio}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      bio: e.target.value,
+                    }))
+                  }
+                  rows={4}
+                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 px-6 py-3 border rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+      </div>
+    </>
+  );
 }
 
 export default MentorsDashboard;

@@ -11,7 +11,7 @@ interface Mentor {
   username: string;
   bio?: string;
   specialties: string[];
-  Charges: number;
+  Charges: string;
   profilephoto?: string;
 }
 
@@ -21,6 +21,9 @@ const BookSession: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
+  useEffect(()=>{
+    console.log("Mentors Data: ",mentors);  
+  },[mentors,setMentors])
   useEffect(() => {
     const getMentors = async () => {
       try {
@@ -50,7 +53,7 @@ const BookSession: React.FC = () => {
             username: doc.username || "Unknown Mentor",
             bio: doc.bio || "Experienced professional ready to help you.",
             specialties,
-            Charges: Number(doc.Charges) || 0,
+            Charges: doc.Charges,
             profilephoto:
               doc.profilephoto ||
               "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
@@ -66,6 +69,8 @@ const BookSession: React.FC = () => {
     };
 
     getMentors();
+        // console.log("Mentors Data: ",mentors);  
+
   }, []);
 
   const filteredMentors = mentors.filter((mentor) =>

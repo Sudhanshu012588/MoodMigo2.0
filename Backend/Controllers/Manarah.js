@@ -58,7 +58,6 @@ export const getRes = async (req, res) => {
     });
   }
 };
-
 export const getManarahAgent = async(req,res)=>{
   try{
     const {userId,ChatName,Personality,Mood,Context }=req.body;
@@ -114,10 +113,7 @@ export const getManarahAgent = async(req,res)=>{
     })
   }
 
-}
-
-
-//chat's i.e sidebar 
+};
 export const renderChat = async(req,res)=>{
   const {userId}=req.body;
   try{
@@ -143,8 +139,7 @@ export const renderChat = async(req,res)=>{
       message:`Can't fetch chats,: ${error.message}`
     })
   }
-}
-
+};
 export const chatHistory = async (req, res) => {
   try {
     const { uuid } = req.body;
@@ -171,8 +166,6 @@ export const chatHistory = async (req, res) => {
     });
   }
 };
-
-
 export const clearHistory = async(req,res)=>{
   try{
     const {userId,uuid}= req.body;
@@ -203,4 +196,4 @@ export const clearHistory = async(req,res)=>{
       message:e
     })
   }
-}
+};

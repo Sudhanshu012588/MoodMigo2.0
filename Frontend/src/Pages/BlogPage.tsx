@@ -248,7 +248,6 @@ const Hearted = async (blogId: string) => {
     }
 
     // ✅ API call
-    
     // ✅ Store temporary state for animation / icon toggling
     //setTempHearted((prev) => ({ ...prev, [blogId]: !prev[blogId] }));
     const HeartResponse = await axios.get(

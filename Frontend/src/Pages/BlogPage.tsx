@@ -301,7 +301,7 @@ const Hearted = async (blogId: string) => {
             {/* Sidebar */}
             <div className="lg:col-span-1 space-y-6">
               {/* Dashboard Button */}
-              <div className="flex justify-end lg:justify-start">
+              {/* <div className="flex justify-end lg:justify-start">
                 <button
                   onClick={goToDashboard}
                   className="bg-white shadow-lg rounded-full p-3 hover:shadow-xl transition-all duration-300 hover:scale-105"
@@ -309,7 +309,7 @@ const Hearted = async (blogId: string) => {
                 >
                   <User size={20} className="text-purple-600" />
                 </button>
-              </div>
+              </div> */}
 
               {/* Search */}
               {/* <div className="bg-white rounded-2xl shadow-lg p-4">

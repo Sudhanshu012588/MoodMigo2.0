@@ -7,6 +7,8 @@ import connectDB from "./DB/DBconfig.js"
 import chatrouter from "./Routes/chat.js";
 import Journalrouter from "./Routes/Journal.js";
 import bookingRoutes from "./Routes/bookingRoutes.js";
+import rateLimit from "express-rate-limit";
+
 // import GoogleGenerativeAI from "@google/generative-ai"
 
 dotenv.config();
@@ -33,12 +35,20 @@ app.get("/", (req, res) => {
   res.send("Hey There 🚀");
 });
 
-
+const chatLimiter = rateLimit({
+  windowMs: 10 * 1000, // 10 seconds
+  max: 1, // 1 request every 10 seconds
+  message: { error: "You are sending messages too quickly. Please slow down." },
+});
 // Questionare routes
 app.use("/questionare", router);
 app.use("/blogs",Blogrouter)
+
+//Old route for manarah
 app.use("/manarah",chatrouter)
-app.use("/api/chats", chatrouter);
+
+//new route for manarah
+app.use("/api/chats",chatLimiter, chatrouter);
 app.use("/Journal",Journalrouter);
 app.use("/api/bookings",bookingRoutes);
 

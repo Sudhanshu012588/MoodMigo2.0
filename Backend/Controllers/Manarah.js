@@ -3,7 +3,9 @@ import { getChatHistory, saveChatHistory } from "../utils/chatMemory.js";
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import chat from "../Models/Chat.js"
 import ChatHistory from "../Models/ChatHistory.js";
+import {BackupManarah} from "../Langchain/BackupManarah.js"
 export const getRes = async (req, res) => {
+  // console.log("called this controller")
   try {
     const { userId, uuid, message} = req.body;
 
@@ -40,7 +42,25 @@ export const getRes = async (req, res) => {
 
     // ✅ Get AI response
     const response = await manarahAgent.respond(message);
-
+    if(!response){
+      const BackupmanarahAgent = new BackupManarah({
+      threadId: threadId,
+      personality: Currentchat.Personality || "friend",
+      mood: Currentchat.Mood || "neutral",
+      context: Currentchat.Context || "",
+      history: history || [],
+    });
+    
+        const sec_response = await BackupmanarahAgent.respond(message);
+        await saveChatHistory(threadId, BackupmanarahAgent.history);
+        // console.log("Sec_response: ",sec_response)
+    return res.status(200).json({
+      status: "success",
+      message: sec_response,
+      uuid: threadId, // Always return UUID to client
+      isNewSession: !uuid // Indicate if this is a new session
+    });
+    }
     // ✅ Save updated history
     await saveChatHistory(threadId, manarahAgent.history);
 

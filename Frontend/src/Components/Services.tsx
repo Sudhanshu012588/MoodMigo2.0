@@ -5,7 +5,7 @@ const services = [
     description:
       "Connect with certified psychiatrists from the comfort of your home for personalized mental health guidance.",
     icon: "🎧",
-    link: `/sessions`,
+    link: `/therapists`,
     premium: false,
     borderColor: "border-violet-400",
   },
@@ -14,7 +14,7 @@ const services = [
     description:
       "Write and reflect on your thoughts with our digital journaling tool designed to track your mental wellness journey.",
     icon: "📔",
-    link: `/journal`,
+    link: `/dashboard`,
     premium: "Learn More",
     borderColor: "border-violet-400",
   },
@@ -23,7 +23,7 @@ const services = [
     description:
       "Our multilingual AI chatbot provides support through text or voice chat, available for 3 hours daily with premium access.",
     icon: "🤖",
-    link: "/chat",
+    link: "/manarah",
     premium: "Learn More",
     borderColor: "border-green-200",
   },
@@ -37,8 +37,9 @@ const services = [
     borderColor: "border-violet-400",
   },
 ];
-
+import { useNavigate } from "react-router-dom";
 export default function ServicesSection() {
+  const navigator = useNavigate();
   return (
     <section className="bg-gradient-to-b from-white to-[#F5F5FC] py-20 px-6 md:px-12 text-center">
       <h2 className="text-3xl md:text-4xl font-extrabold text-gray-800 mb-4">Our Services</h2>
@@ -72,7 +73,7 @@ export default function ServicesSection() {
                 service.premium ? "text-purple-600" : "text-indigo-600"
               } hover:underline`}
             >
-              <button>Learn More</button>
+              <button onClick={()=>navigator(service.link)}>Learn More</button>
             </a>
           </div>
         ))}

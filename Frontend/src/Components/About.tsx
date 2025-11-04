@@ -45,9 +45,6 @@ export default function AboutPage() {
           your mental wellbeing, MoodMigo is here to accompany you on your journey toward better
           mental health.
         </p>
-        <button className="border border-purple-600 text-purple-700 font-medium px-6 py-2 rounded-xl hover:bg-purple-50 transition">
-          Learn More About Us
-        </button>
       </div>
     </div>
   );

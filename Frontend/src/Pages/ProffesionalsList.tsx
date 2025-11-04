@@ -96,7 +96,7 @@ const BookSession: React.FC = () => {
             </h1>
             <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
               Choose from our verified and experienced therapists to begin your
-              personal growth journey.
+              personal growth journey in the Best way possible.
             </p>
           </motion.div>
 

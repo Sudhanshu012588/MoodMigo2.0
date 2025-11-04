@@ -20,8 +20,8 @@ export default function Footer() {
             <li><a href="#" className="hover:text-purple-700">Home</a></li>
             <li><a href='/mentorspage' className='hover:text-purple-700'>Mentor's Page</a></li>
 
-            <li><a href="#" className="hover:text-purple-700">About Us</a></li>
-            <li><a href="#" className="hover:text-purple-700">Services</a></li>
+            {/* <li><a href="#" className="hover:text-purple-700">About Us</a></li> */}
+            {/* <li><a href="#" className="hover:text-purple-700">Services</a></li> */}
           </ul>
         </div>
 
@@ -29,13 +29,12 @@ export default function Footer() {
         <div>
           <h3 className="text-lg font-semibold mb-2">Services</h3>
           <ul className="space-y-1">
-            <li><a href="#" className="hover:text-purple-700">Online Counseling</a></li>
-            <li><a href="#" className="hover:text-purple-700">Journal</a></li>
-            <li><a href="#" className="hover:text-purple-700">MANARAH Chatbot</a></li>
-            <li><a href="#" className="hover:text-purple-700">Community</a></li>
+            <li><a href="/therapists" className="hover:text-purple-700">Online Counseling</a></li>
+            {/* <li><a href="#" className="hover:text-purple-700">Journal</a></li> */}
+            <li><a href="/manarah" className="hover:text-purple-700">MANARAH Chatbot</a></li>
+            <li><a href="/blog" className="hover:text-purple-700">Community</a></li>
           </ul>
         </div>
-
         {/* Contact */}
         <div>
           <h3 className="text-lg font-semibold mb-2">Contact</h3>

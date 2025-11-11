@@ -25,7 +25,9 @@ connectDB();
 
 // CORS
 app.use(
-  cors()
+  cors({
+    origin: ["https://www.moodmigo.com", "https://moodmigo.com"],
+  })
 );
 // const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 

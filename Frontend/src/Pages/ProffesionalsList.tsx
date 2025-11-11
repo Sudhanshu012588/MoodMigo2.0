@@ -21,9 +21,9 @@ const BookSession: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
-  useEffect(()=>{
-    console.log("Mentors Data: ",mentors);  
-  },[mentors,setMentors])
+  // useEffect(()=>{
+  //   // console.log("Mentors Data: ",mentors);  
+  // },[mentors,setMentors])
   useEffect(() => {
     const getMentors = async () => {
       try {

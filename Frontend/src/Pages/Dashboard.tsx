@@ -22,6 +22,7 @@ const Dashboard: React.FC = () => {
   const setUsername = useUserState((state) => state.setUsername);
   const setEmail = useUserState((state) => state.setEmail);
   const setId = useUserState((state) => state.setId);
+  const id = useUserState((state)=>state.id)
   const [OpenJournal, setOpenJournal] = useState<Boolean>(false)
   const [Score, setScore] = useState<number[]>([])
   const [sessions, setSessions] = useState<any>();
@@ -37,11 +38,12 @@ const Dashboard: React.FC = () => {
   ];
 
   const getAssessment = async (id: string) => {
-    //console.log(id)
+    ////console.log(id)
     try {
       const response = await axios.post(`${import.meta.env.VITE_BACKEND_BASE_URL}/questionare/getassessment`, {
         id: id
       })
+
       if (response.data.status === "success") {
         setScore(response.data.TotalScore)
       } else {
@@ -51,13 +53,61 @@ const Dashboard: React.FC = () => {
       console.error("Error fetching assessment data:", error);
     }
   }
+  const [userCache, setUserCache] = useState<{
+    userId:string,
+    BlogContributions:Number,
+    premium:boolean,
+    NumberOfChats:Number,
+    premiumExpiry: string
+  }>({
+    userId: "",
+    BlogContributions: 0,
+    premium: false,
+    NumberOfChats: 0,
+    premiumExpiry: ""
+  });
+  const isPremium = useUserState((state)=>state.isPremium);
+  const setisPremium = useUserState((state)=>state.setisPremium);
+  const getUserCache = async (id: string) => {
+    try {
+      // console.log("Fetching user cache for ID:", id);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_BASE_URL}/api/cache/getData/${id}`);
+      // console.log("Cache response:", response);
+      if (response.data.status === "sucess") {
+
+        // console.log("User cache data:", response.data.cache);
+        setUserCache({
+          userId: id,
+          BlogContributions: response.data.cache.BlogContributions,
+          premium: response.data.cache.premium,
+          NumberOfChats: response.data.cache.NumberOfChats,
+          premiumExpiry: response.data.cache.premiumExpiry
+        })
+
+        const targetDate = new Date(response.data.cache.premiumExpiry);
+const now = new Date();
+
+const isExpired = targetDate < now;
+console.log("Is premium expired?:", isExpired);
+if(!isExpired)setisPremium(true);
+        console.log("isPremium from cache:", isPremium);
+      }
+      else{
+        throw new Error("Failed to fetch user cache data");
+      }
+    } catch (error) {
+      console.log(userCache)
+      console.error("Error fetching user cache data:", error);
+    }
+  }
+
   const getSessions = async (id: string) => {
-    //console.log("Fetching sessions for user ID:", id);
+    ////console.log("Fetching sessions for user ID:", id);
   try {
     const res = await axios.get(`${import.meta.env.VITE_BACKEND_BASE_URL}/api/bookings/user/${id}`);
     if (res.data.status === "success") {
       const sessions = res.data.bookings;
-      //console.log("bookings: ",res.data.bookings)
+      ////console.log("bookings: ",res.data.bookings)
       const client = new Client()
         .setEndpoint("https://fra.cloud.appwrite.io/v1")
         .setProject(import.meta.env.VITE_MENTORS_PROJECT_ID as string);
@@ -70,11 +120,11 @@ const Dashboard: React.FC = () => {
           const mentorRes = await databases.listDocuments(
             "6826d3a10039ef4b9444",
             "6826dd9700303a5efb90",
-            [Query.equal("id", session.mentorId)]
+            [Query.equal("$id", session.mentorId)]
           );
 
           const mentor = mentorRes.documents[0];
-          // console.log("mentor: ",mentor)
+          // //console.log("mentor: ",mentor)
           return {
             ...session,
             $id:uuidv4(),
@@ -83,14 +133,13 @@ const Dashboard: React.FC = () => {
           };
         })
       );
-
       setSessions(sessionsWithMentors);
     }
     else{
       console.error("Failed to fetch sessions");
     }
   } catch (error) {
-    //console.log("here")
+    ////console.log("here")
     console.error("Error fetching sessions:", error);
   }
 };
@@ -101,16 +150,17 @@ const Dashboard: React.FC = () => {
       try {
         await account.getSession({ sessionId: "current" });
         const userData = await account.get();
-
+        setLoading(true);
         setUsername(userData.name);
         setEmail(userData.email);
         setId(userData.$id);
         getAssessment(userData.$id);
+        getUserCache(userData.$id);
         getSessions(userData.$id);
         setLoading(false);
         setIsLoggedIn(true);
       } catch (error: any) {
-        //console.log(error);
+        ////console.log(error);
         setIsLoggedIn(false);
         toast.error("You must be logged in to access the dashboard");
         navigate("/login");
@@ -120,7 +170,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
 useEffect(() => {
-  console.log("Sessions: ",sessions)
+  //console.log("Sessions: ",sessions)
 },[sessions,setSessions]);
   if (loading) return <MoodMigoLoading />;
 
@@ -222,17 +272,42 @@ useEffect(() => {
           {/* Left Column - Progress & Journal */}
           <div className="space-y-8">
             {/* Progress Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="bg-gradient-to-tr from-purple-100 to-indigo-100 rounded-3xl p-6 flex flex-col justify-center items-center shadow-xl hover:shadow-2xl transition-shadow"
-            >
-              <span className="text-sm font-medium px-4 py-1 rounded-full bg-gradient-to-r from-purple-300 to-indigo-300 text-gray-900 mb-4">
-                Your Progress
-              </span>
-              <Chart numbers={Score} />
-            </motion.div>
+            {isPremium? (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.6 }}
+    className="bg-gradient-to-tr from-purple-100 to-indigo-100 rounded-3xl p-6 flex flex-col justify-center items-center shadow-xl hover:shadow-2xl transition-shadow"
+  >
+    <span className="text-sm font-medium px-4 py-1 rounded-full bg-gradient-to-r from-purple-300 to-indigo-300 text-gray-900 mb-4">
+      Your Progress
+    </span>
+    <Chart numbers={Score} />
+  </motion.div>
+) : (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.6 }}
+    className="bg-gradient-to-tr from-purple-100 to-indigo-100 rounded-3xl p-6 flex flex-col justify-center items-center shadow-xl hover:shadow-2xl transition-shadow cursor-pointer"
+    // onClick={() =>} // optional
+  >
+    <span className="text-sm font-medium px-4 py-1 rounded-full bg-gradient-to-r from-purple-300 to-indigo-300 text-gray-900 mb-4">
+      Premium Feature
+    </span>
+
+    <p className="text-gray-700 text-center mb-4 font-semibold">
+      Unlock progress tracking and more
+    </p>
+
+    <button 
+      onClick={()=>navigate(`/premium/${id}`)}
+    className="px-6 py-2 rounded-full cursor-pointer bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold shadow-md hover:shadow-lg transition">
+      Upgrade to Premium
+    </button>
+  </motion.div>
+)}
+
 
             {/* Journal Entry Card */}
             <motion.div

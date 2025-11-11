@@ -1,0 +1,26 @@
+{
+  "name": "MoodMigo",
+  "short_name": "MoodMigo",
+  "description": "Your personal mental wellness companion",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6C47FF",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],"serviceworker": {
+  "src": "/service-worker.js",
+  "scope": "/",
+  "type": "classic"
+}
+}

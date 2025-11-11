@@ -8,7 +8,8 @@ import chatrouter from "./Routes/chat.js";
 import Journalrouter from "./Routes/Journal.js";
 import bookingRoutes from "./Routes/bookingRoutes.js";
 import rateLimit from "express-rate-limit";
-
+import paymentRoutes from "./Routes/Razorpay.js"
+import cacheRoutes from "./Routes/CacheData.js"
 // import GoogleGenerativeAI from "@google/generative-ai"
 
 dotenv.config();
@@ -25,7 +26,7 @@ connectDB();
 // CORS
 app.use(
   cors({
-    origin: process.env.FRONTEND_BASE_URL
+    origin:process.env.FRONTEND_BASE_URL
   })
 );
 // const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -51,7 +52,8 @@ app.use("/manarah",chatrouter)
 app.use("/api/chats",chatLimiter, chatrouter);
 app.use("/Journal",Journalrouter);
 app.use("/api/bookings",bookingRoutes);
-
+app.use("/api/payment",paymentRoutes)
+app.use("/api/cache",cacheRoutes)
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

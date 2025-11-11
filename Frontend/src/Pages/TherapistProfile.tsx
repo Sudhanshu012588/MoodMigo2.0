@@ -7,14 +7,15 @@ import MoodMigoLoading from "./LoadingPage";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { account } from "../Appwrite/config";
-
+import PaymentPage from "../Components/Razorpay";
+// import { number } from "framer-motion";
 interface Therapist {
   username: string;
   bio: string;
   specialties: string;
-  Charges: string;
+  Charges: number;
   profilephoto: string | null;
-  id:string|null;
+  id:string;
 }
 
 interface Slot {
@@ -37,6 +38,8 @@ const TherapistProfile: React.FC = () => {
 
   // 🧠 Fetch therapist details
   const getTherapistDetails = async () => {
+    console.log(":", transactionId);
+    if(isBooking){console.log("Booking in progress, skipping details fetch")}
     if (!therapistId) return;
     try {
       const client = new Client()
@@ -71,44 +74,54 @@ const TherapistProfile: React.FC = () => {
     }
   };
 
+  const updateTransactionId = (id:string)=>{
+    setTransactionId(id);
+  }
+
   // 🗓 Fetch next 7 days slots
-  const getAvailableSlots = async () => {
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_BASE_URL}/api/bookings/mentor/${therapistId}`
-      );
+const getAvailableSlots = async () => {
+  try {
+    // if(therapistDetails===null)return;
+    const res = await axios.get(
+      `${import.meta.env.VITE_BACKEND_BASE_URL}/api/bookings/mentor/${therapistId}`
+    );
+    // console.log("Backend response",res.data.bookings)
+    const bookedSessions = res.data.bookings || [];
+    const bookedTimes = bookedSessions.map((s: any) =>
+      new Date(s.sessionDate).toISOString()   // ✅ exact format from DB
+    );
 
-      const bookedSessions = res.data.bookings || [];
-      const bookedTimes = bookedSessions.map((s: any) =>
-        new Date(s.sessionDate).toISOString()
-      );
+    const slots: Slot[] = [];
+    const startHour = 9;
+    const endHour = 17;
 
-      const slots: Slot[] = [];
-      const startHour = 9;
-      const endHour = 17;
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+      const date = new Date();
+      date.setDate(date.getDate() + dayOffset);
 
-      for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-        const date = new Date();
-        date.setDate(date.getDate() + dayOffset);
+      for (let hour = startHour; hour <= endHour; hour++) {
+        const slotTime = new Date(date);
+        slotTime.setHours(hour, 0, 0, 0);
 
-        for (let hour = startHour; hour <= endHour; hour++) {
-          const slotTime = new Date(date);
-          slotTime.setHours(hour, 0, 0, 0);
-          const iso = slotTime.toISOString();
+        const isoUTC = slotTime.toISOString(); // ✅ exact same format as DB
 
-          slots.push({
-            date: date.toDateString(),
-            time: slotTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            isBooked: bookedTimes.includes(iso),
-          });
-        }
+        slots.push({
+          date: date.toDateString(), // UI-friendly date
+          time: slotTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          isBooked: bookedTimes.includes(isoUTC), // ✅ correct matching
+        });
       }
-
-      setAvailableSlots(slots);
-    } catch (error) {
-      console.error("Error fetching available slots:", error);
     }
-  };
+    setAvailableSlots(slots);
+  } catch (error) {
+    console.error("Error fetching available slots:", error);
+  }
+};
+
+
+  useEffect(()=>{
+    // console.log("Available Slots Updated:",availableSlots);
+  },[setAvailableSlots,availableSlots])
 
   useEffect(() => {
     getTherapistDetails();
@@ -125,11 +138,8 @@ const TherapistProfile: React.FC = () => {
   };
 
   // 💳 Step 2: Confirm payment → Create booking + transaction
-  const handlePaymentSubmit = async () => {
-    if (!transactionId.trim()) {
-      toast.error("Please enter your Transaction ID!");
-      return;
-    }
+  const handlePaymentSubmit = async (razorpay_signature:string,razorpay_payment_id:string,razorpay_order_id:string) => {
+    
     if (!therapistDetails || !selectedSlot) {
       toast.error("Invalid booking details!");
       return;
@@ -148,12 +158,17 @@ const TherapistProfile: React.FC = () => {
         {
           userId: user.$id,
           userName: user.name,
-          mentorId: therapistDetails.id,
+          mentorId: therapistId,
           mentorName: therapistDetails.username,
           sessionDate,
           notes: `Session booked with ${therapistDetails.username}`,
-          transactionId,
+          razorpay_signature,
+          razorpay_payment_id,
+          razorpay_order_id,
           Amount: therapistDetails.Charges,
+          clientName: user.name,
+          MentorName: therapistDetails.username,
+          usermail: user.email,
         }
       );
 
@@ -231,30 +246,8 @@ const TherapistProfile: React.FC = () => {
 
         {/* Payment Section */}
         {showPaymentSection && (
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white rounded-3xl p-8 border border-indigo-100 shadow-md mb-12">
-            <div className="flex-1 flex items-center justify-center bg-gradient-to-tr from-indigo-50 to-purple-50 rounded-2xl p-4 border">
-              <img src="/scanner.jpg" alt="QR Code" className="max-w-full max-h-48 rounded-lg" />
-            </div>
-            <div className="flex-1">
-              <label className="block text-gray-700 font-medium mb-2">Enter Transaction ID</label>
-              <input
-                type="text"
-                value={transactionId}
-                onChange={(e) => setTransactionId(e.target.value)}
-                placeholder="e.g. UPI12345XYZ"
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition"
-              />
-              <button
-                onClick={handlePaymentSubmit}
-                disabled={isBooking}
-                className="w-full mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2 rounded-lg font-semibold hover:scale-[1.02] transition-all shadow-md"
-              >
-                {isBooking ? "Confirming..." : "Confirm Payment"}
-              </button>
-            </div>
-          </div>
+          <PaymentPage amount={Charges} therapistDetails={therapistDetails} selectedSlot={selectedSlot} onPaymentSuccess={handlePaymentSubmit} setTransactionId={updateTransactionId} />
         )}
-
         {/* About */}
         <section className="mb-16">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center mb-4">

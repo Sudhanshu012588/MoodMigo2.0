@@ -9,6 +9,8 @@ interface UserState {
   setId:(id:string)=>void
   setUsername:(username:string)=>void
   setEmail:(email:string)=>void
+  setisPremium:(value:boolean)=>void
+  isPremium:boolean
 }
 
 export const useUserState = create<UserState>()((set) => ({
@@ -16,6 +18,8 @@ export const useUserState = create<UserState>()((set) => ({
   username:'',
   email:'',
   isLoggedIn: false,
+  isPremium:false,
+  setisPremium:(value:boolean)=>set(() => ({isPremium:value})),
   setIsLoggedIn: (value: boolean) => set(() => ({ isLoggedIn: value })),
   setId:(id:string)=>set(() => ({id:id})),
   setUsername:(username:string)=>set(() => ({username:username})),

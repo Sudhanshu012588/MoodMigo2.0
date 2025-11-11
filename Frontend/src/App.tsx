@@ -19,6 +19,7 @@ import ChatPage from './Pages/Manarah';
 import ManarahCall from "./Pages/ManarahVoiceCall";
 import BookSession from './Pages/ProffesionalsList';
 import TherapistProfile from './Pages/TherapistProfile';
+import PremiumPage from './Pages/Premium';
 function App() {
   
   // const isLoggedIn = useUserState((state) => state.isLoggedIn);
@@ -68,6 +69,7 @@ function App() {
           <Route path='/manarah/chat' element={<ChatPage/>}/>
           <Route path='/therapists' element={<BookSession/>}/>
           <Route path='/therapist/:therapistId' element={<TherapistProfile/>}/>
+          <Route path='/premium/:userId' element={<PremiumPage/>}/>
         </Routes>
       </BrowserRouter>
     </>

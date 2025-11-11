@@ -6,4 +6,5 @@ const router = express.Router();
 router.get("/mentor/:mentorId", getBookingsByMentor);
 router.post("/", createBooking);
 router.get("/user/:userId",getBookingsByUser)
+
 export default router;

@@ -1,14 +1,17 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Send, Menu, X, MessageCircle, Edit2, Save, Trash2, Moon, Sun, RefreshCw } from "lucide-react";
+import { Plus, Send, Menu, X, MessageCircle, Edit2, Save, Trash2, Moon, Sun, RefreshCw} from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { account } from "../Appwrite/config";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from 'react-markdown';
-import { Phone } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+// import { Phone } from "lucide-react";
+import {  useNavigate } from "react-router-dom";
+import { useUserState } from "../Store/Userstore";
+
+import MoodMigoLoading from "./LoadingPage";
 // import Signup from "./Signup";
 // Types
 interface Message {
@@ -328,6 +331,7 @@ function DeleteConfirmation({
 
 // Sidebar Component
 function Sidebar({ 
+  userId,
   isMobile, 
   theme,  
   chats, 
@@ -339,6 +343,7 @@ function Sidebar({
   onToggleDarkMode, 
   darkMode 
 }: { 
+  userId: string;
   isMobile: boolean; 
   sidebarOpen: boolean;
   theme: ThemeClasses; 
@@ -351,7 +356,11 @@ function Sidebar({
   onDeleteChat: (chatId: string) => void; 
   onToggleDarkMode: () => void; 
   darkMode: boolean;
-}) {
+})
+{
+  const Navigate=useNavigate();
+  const isPremium = useUserState((state)=>state.isPremium);
+  
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -368,7 +377,12 @@ function Sidebar({
         <div className="flex gap-2">
           <motion.button
             whileHover={{ scale: 1.1 }}
-            onClick={onNewChat}
+            onClick={()=>{
+              if(chats.length>=3 && !isPremium){
+                toast.success("Upgrade to Premium to create more chats!");
+                Navigate(`/premium/${userId}`)}
+              else{
+              onNewChat()}}}
             className="p-2 rounded-md bg-indigo-500 text-white hover:bg-indigo-600 shadow flex items-center gap-2"
           >
             <Plus size={18} />
@@ -407,27 +421,28 @@ function Sidebar({
               </div>
             </motion.button>
             
-            <div className="absolute right-2 top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute right-2 top-2 flex gap-1">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onEditChat(chat._id);
                 }}
-                className="p-1 rounded-md bg-white/80 text-gray-600 shadow-sm hover:bg-white hover:text-indigo-600 transition-colors"
+                className="p-1 rounded-md bg-white/80 text-gray-600 shadow-sm bg-white text-indigo-600 "
                 title="Edit chat"
               >
                 <Edit2 size={12} />
               </button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteChat(chat._id);
-                }}
-                className="p-1 rounded-md bg-white/80 text-gray-600 shadow-sm hover:bg-red-50 hover:text-red-600 transition-colors"
-                title="Delete chat"
-              >
-                <Trash2 size={12} />
-              </button>
+  onClick={(e) => {
+    e.stopPropagation();
+    onDeleteChat(chat._id);
+  }}
+  className="p-1 rounded-md bg-red-50 text-red-600 shadow-sm bg-red-100 "
+  title="Delete chat"
+>
+  <Trash2 size={12} />
+</button>
+
             </div>
           </motion.div>
         ))}
@@ -597,6 +612,7 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
+  const [userId,setuserId]=useState<string>("");
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
@@ -612,7 +628,8 @@ export default function ChatPage() {
   // Load chat history for active chat
   const loadChatHistory = useCallback(async (uuid: string) => {
     if (!uuid) return;
-    
+    const user = await account.get();
+    setuserId(user.$id);
     setIsLoadingMessages(true);
     try {
       const response = await axios.post(
@@ -639,6 +656,7 @@ export default function ChatPage() {
   // Load chats on component mount
   const getChats = useCallback(async () => {
     try {
+      setIsLoading(true);
       const user = await account.get();
       if(!user)return;
       const response = await axios.post(
@@ -674,6 +692,9 @@ export default function ChatPage() {
       // toast.error("Failed to load chats");
       setHasInitialLoad(true);
     }
+    finally {
+      setIsLoading(false);
+    }
   }, [activeChat, loadChatHistory]);
 
   // Initial load
@@ -703,13 +724,14 @@ export default function ChatPage() {
   }, [chats, activeChat]);
 
   // Send message function
+
+  const [ischatLoading,setischatLoading]=useState<boolean>(false);
   const handleSend = async () => {
     if (!input.trim() || !activeChat || isLoading) return;
-
+    
     const userMessage = input.trim();
     setInput("");
-    setIsLoading(true);
-
+    setischatLoading(true)
     // Optimistically update UI - add user message
     const userMessageObj: Message = {
       role: "user",
@@ -753,8 +775,8 @@ export default function ChatPage() {
       // Remove optimistic user message on error
       setMessages(prev => prev.filter(msg => msg.timestamp !== userMessageObj.timestamp));
       setInput(userMessage);
-    } finally {
-      setIsLoading(false);
+    }finally{
+      setischatLoading(false);
     }
 
     if (isMobile) setSidebarOpen(false);
@@ -905,6 +927,7 @@ export default function ChatPage() {
   // Delete chat
   const handleDeleteChat = async (chatId: string) => {
     try {
+      setIsLoading(true);
       const response = await axios.delete(`${import.meta.env.VITE_BACKEND_BASE_URL}/api/chats/${chatId}`);
       
       if (response.data.status === "success") {
@@ -927,6 +950,9 @@ export default function ChatPage() {
     } catch (error) {
       console.error("Error deleting chat:", error);
       toast.error("Failed to delete chat");
+    }
+    finally {
+      setIsLoading(false);
     }
   };
 
@@ -993,6 +1019,8 @@ export default function ChatPage() {
           setShowChatForm(false);
         }
       },[activeChat])
+
+
       const checkUser = async()=>{
         console.log("Checking user login status");
         try{
@@ -1010,6 +1038,12 @@ export default function ChatPage() {
       useEffect(()=>{
         checkUser();
       },[])
+
+      if(isLoading){
+        return(
+          <MoodMigoLoading/>
+        )
+      }
   return (
     <div className={`flex h-screen ${themeClasses.bg} ${themeClasses.text} transition-colors duration-300`}>
       {/* Modals */}
@@ -1096,6 +1130,7 @@ export default function ChatPage() {
       <AnimatePresence>
         {(sidebarOpen || !isMobile) && (
           <Sidebar
+          userId={userId}
             isMobile={isMobile}
             sidebarOpen={sidebarOpen}
             theme={themeClasses}
@@ -1200,7 +1235,7 @@ export default function ChatPage() {
             <EmptyState currentChat={currentChat} theme={themeClasses} />
           )}
           <div ref={messagesEndRef} />
-          {isLoading && (
+          {ischatLoading && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1240,7 +1275,7 @@ export default function ChatPage() {
               <Send size={18} />
             </motion.button>
 
-              <motion.button
+              {/* <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => Navigate(`/manarah/voicecall/${activeChat}`)}
@@ -1252,7 +1287,7 @@ export default function ChatPage() {
         }`}
       >
         <Phone size={18} />
-      </motion.button>
+      </motion.button> */}
           </div>
         </div>
       </div>

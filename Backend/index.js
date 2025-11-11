@@ -25,9 +25,7 @@ connectDB();
 
 // CORS
 app.use(
-  cors({
-    origin:process.env.FRONTEND_BASE_URL
-  })
+  cors()
 );
 // const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
